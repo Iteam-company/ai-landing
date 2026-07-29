@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+@theme {
+  /* Default palette: voltage. @theme generates the bg, text, border, accent and
+     shadow utilities from these tokens. Alternative palettes redefine the same
+     CSS variables in the [data-palette] blocks below. */
+  --color-bg: #0a0b0f;
+  --color-bg-soft: #0e1016;
+  --color-bg-card: #12141c;
+  --color-fg: #edf0e8;
+  --color-fg-muted: #8b9088;
+  --color-border: rgba(200, 240, 66, 0.14);
+  --color-accent: #c8f042;
+  --color-accent-soft: #dcff7a;
+  --color-accent-fg: #0d1102;
+
+  --font-display: var(--font-display-src), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-src), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-sans-src), ui-sans-serif, system-ui, sans-serif;
+
+  /* Softly-rounded control surfaces — panels of an ops console, not pills. */
+  --radius-card: 1rem;
+  --radius-input: 0.625rem;
+
+  /* Signal shadows: a hairline ring plus depth. Hover lifts the accent ring. */
+  --shadow-node: 0 0 0 1px var(--color-border), 0 22px 48px -32px rgba(0, 0, 0, 0.9);
+  --shadow-node-hover:
+    0 0 0 1px rgba(200, 240, 66, 0.4), 0 0 32px -8px rgba(200, 240, 66, 0.22),
+    0 28px 56px -30px rgba(0, 0, 0, 0.95);
+  --shadow-btn: 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 10px 28px -14px rgba(0, 0, 0, 0.85);
+  --shadow-rail: inset 2px 0 0 0 var(--color-accent);
+}
+
+/* Palettes — all dark. data-palette on <html> selects one (set from
+   NEXT_PUBLIC_SITE_PALETTE at build, overridden by ?color= during local
+   preview). Each block re-defines the same --color and --shadow variables so
+   the whole UI re-skins without touching component markup. */
+
+[data-palette="ember"] {
+  --color-bg: #0f0a08;
+  --color-bg-soft: #150e0b;
+  --color-bg-card: #1b1210;
+  --color-fg: #f6ece7;
+  --color-fg-muted: #a3908a;
+  --color-border: rgba(255, 122, 69, 0.16);
+  --color-accent: #ff7a45;
+  --color-accent-soft: #ffa077;
+  --color-accent-fg: #200800;
+  --shadow-node: 0 0 0 1px var(--color-border), 0 22px 48px -32px rgba(0, 0, 0, 0.9);
+  --shadow-node-hover:
+    0 0 0 1px rgba(255, 122, 69, 0.45), 0 0 32px -8px rgba(255, 122, 69, 0.26),
+    0 28px 56px -30px rgba(0, 0, 0, 0.95);
+  --shadow-btn: 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 10px 28px -14px rgba(0, 0, 0, 0.85);
+  --shadow-rail: inset 2px 0 0 0 var(--color-accent);
+}
+
+[data-palette="plasma"] {
+  --color-bg: #0c0810;
+  --color-bg-soft: #120c18;
+  --color-bg-card: #191021;
+  --color-fg: #f3e9f3;
+  --color-fg-muted: #998ea3;
+  --color-border: rgba(255, 77, 141, 0.16);
+  --color-accent: #ff4d8d;
+  --color-accent-soft: #ff85b1;
+  --color-accent-fg: #1c0210;
+  --shadow-node: 0 0 0 1px var(--color-border), 0 22px 48px -32px rgba(0, 0, 0, 0.9);
+  --shadow-node-hover:
+    0 0 0 1px rgba(255, 77, 141, 0.45), 0 0 32px -8px rgba(255, 77, 141, 0.26),
+    0 28px 56px -30px rgba(0, 0, 0, 0.95);
+  --shadow-btn: 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 10px 28px -14px rgba(0, 0, 0, 0.85);
+  --shadow-rail: inset 2px 0 0 0 var(--color-accent);
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+  }
+  /* Martian Mono is wide by design — pull it back so labels stay compact. */
+  .font-mono {
+    letter-spacing: -0.06em;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer utilities {
+  /* Vertical hairline rails — the console backdrop. Sits behind content on a
+     relatively-positioned wrapper. */
+  .rails {
+    background-image: linear-gradient(
+      to right,
+      var(--color-border) 1px,
+      transparent 1px
+    );
+    background-size: 104px 100%;
+  }
+  /* Both axes at once — the open cells a node canvas sits on. Single rule, so
+     it replaces .rails rather than fighting it for background-image. */
+  .rails-grid {
+    background-image:
+      linear-gradient(to right, var(--color-border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-border) 1px, transparent 1px);
+    background-size: 52px 52px;
+  }
+  .rails-fade {
+    mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
+  }
+
+  /* Soft accent bloom — the glow of a running signal. */
+  .bloom {
+    background-image: radial-gradient(
+      60% 55% at 50% 0%,
+      color-mix(in oklab, var(--color-accent) 16%, transparent) 0%,
+      transparent 70%
+    );
+  }
+
+  /* Fine film grain so the flat surfaces do not read as plastic. */
+  .grain {
+    position: relative;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>");
+    mix-blend-mode: overlay;
+    opacity: 0.035;
+  }
+
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* Dashed signal travelling along an SVG connector. */
+  @keyframes wire-flow {
+    to { stroke-dashoffset: -64; }
+  }
+  .animate-wire {
+    stroke-dasharray: 6 10;
+    animation: wire-flow 1.6s linear infinite;
+  }
+
+  @keyframes node-pulse {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.35); }
+  }
+  .animate-node {
+    animation: node-pulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee 38s linear infinite;
+  }
+
+  @keyframes caret-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  .animate-caret {
+    animation: caret-blink 1.1s step-end infinite;
+  }
+
+  .mask-fade-x {
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-wire,
+    .animate-node,
+    .animate-marquee,
+    .animate-caret {
+      animation: none;
+    }
+  }
+}

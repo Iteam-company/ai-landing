@@ -1,0 +1,51 @@
+{
+  "id": "agency-ai",
+  "repo": "template-agency-ai-landing",
+  "label": "AI Agency / n8n Automation Studio",
+  "description": "Control-room landing page for an AI-automation agency selling AI agents and n8n workflows: animated node-flow architecture demos, pain grid, solution stack, pricing tiers, and a conversion zone with a Cal.com booking embed plus a webhook-backed lead form.",
+  "version": "0.1.0",
+  "preview": {
+    "cmd": "npm run dev",
+    "port": 3000,
+    "colorParam": "color"
+  },
+  "palettes": [
+    { "id": "voltage", "label": "Voltage", "accent": "#c8f042", "bg": "#0a0b0f" },
+    { "id": "ember", "label": "Ember", "accent": "#ff7a45", "bg": "#0f0a08" },
+    { "id": "plasma", "label": "Plasma", "accent": "#ff4d8d", "bg": "#0c0810" }
+  ],
+  "defaultPalette": "voltage",
+  "paletteEnvVar": "NEXT_PUBLIC_SITE_PALETTE",
+  "blocks": [
+    { "name": "header", "component": "Header", "label": "Header / nav" },
+    { "name": "hero", "component": "Hero", "label": "Hero with interactive n8n-style node flow" },
+    { "name": "pains", "component": "Pains", "label": "Business pains — 2x2 hover grid" },
+    { "name": "solutions", "component": "Solutions", "label": "AI solutions — what we sell" },
+    { "name": "showcase", "component": "Showcase", "label": "Architecture demo — animated lead pipeline" },
+    { "name": "pricing", "component": "Pricing", "label": "Pricing tiers (middle recommended)" },
+    { "name": "booking", "component": "Booking", "label": "Business Calendar booking (feature: calendar)" },
+    { "name": "customers", "component": "CustomerAccess", "label": "Customer accounts (feature: customers)" },
+    { "name": "contact", "component": "Contact", "label": "Conversion zone — Cal.com embed + lead form" },
+    { "name": "footer", "component": "Footer", "label": "Footer" }
+  ],
+  "features": [
+    { "id": "calendar", "label": "Business Calendar (bookings + admin dashboard)", "requiresBackend": true },
+    { "id": "customers", "label": "Customer accounts (sign in / up, bonuses)", "requiresBackend": true }
+  ],
+  "content": {
+    "source": "local",
+    "locales": ["ru"],
+    "note": "Content is a single typed source (content/site.ts), Russian only. Storyblok wiring (BlockProvider + delivery client + per-block schema) is tracked in TPL-2."
+  },
+  "storyblok": {
+    "status": "pending",
+    "note": "TPL-2: define per-block Storyblok component schema to seed via the Management API."
+  },
+  "backend": {
+    "note": "Feature layer is env-gated. With no feature this builds as a static export (output: export) and the lead form posts directly to NEXT_PUBLIC_N8N_WEBHOOK_URL. When a backend feature is on, the CLI sets EASYLAND_BACKEND=1 → output: standalone, enabling app/api (bookings, auth, and POST /api/leads which stores leads in MongoDB, emails the admin and forwards to N8N_WEBHOOK_URL) plus the /admin dashboard. Static clients have app/api + app/admin pruned at scaffold time."
+  },
+  "integrations": {
+    "calendar": "Cal.com (or Calendly) embed — set NEXT_PUBLIC_CAL_LINK (e.g. \"acme/30min\") or NEXT_PUBLIC_CAL_EMBED_URL for any other provider.",
+    "leads": "NEXT_PUBLIC_N8N_WEBHOOK_URL posts the form straight to an n8n Webhook node (works in static builds). Server-side N8N_WEBHOOK_URL forwards from /api/leads in backend builds."
+  }
+}
