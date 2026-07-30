@@ -9,16 +9,14 @@
 
 import { DEFAULT_LOCALE, type Locale } from "@/lib/lang";
 import type { Site, Ui } from "./types";
-import { site as ruSite } from "./ru/site";
-import { ui as ruUi } from "./ru/ui";
 import { site as enSite } from "./en/site";
 import { ui as enUi } from "./en/ui";
 
 /** Marketing copy per locale. */
-export const content: Record<Locale, Site> = { ru: ruSite, en: enSite };
+export const content: Record<Locale, Site> = { en: enSite };
 
 /** Interface strings per locale. */
-export const uiContent: Record<Locale, Ui> = { ru: ruUi, en: enUi };
+export const uiContent: Record<Locale, Ui> = { en: enUi };
 
 export function getContent(locale: Locale): Site {
   return content[locale];

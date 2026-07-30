@@ -8,13 +8,18 @@
 // generateStaticParams and there is no redirect hop on the canonical URL.
 //
 // The default locale is a build-time choice, like the palette:
-// NEXT_PUBLIC_SITE_LOCALE=en makes English the root and moves Russian to "/ru/".
+// NEXT_PUBLIC_SITE_LOCALE picks which of LOCALES is served at the root.
+//
+// Only English ships right now. Adding a language means adding it to LOCALES
+// below, filling in the maps at the bottom of this file, and adding the matching
+// `content/<locale>/` folder (see content/index.ts). The switcher hides itself
+// while there is a single locale.
 
-export const LOCALES = ["ru", "en"] as const;
+export const LOCALES = ["en"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
-const FALLBACK_LOCALE: Locale = "ru";
+const FALLBACK_LOCALE: Locale = "en";
 
 export function isLocale(value: string | undefined): value is Locale {
   return !!value && (LOCALES as readonly string[]).includes(value);
@@ -64,30 +69,25 @@ export function localeHref(locale: Locale): string {
 
 /** `<html lang>` value. */
 export const HTML_LANG: Record<Locale, string> = {
-  ru: "ru",
   en: "en",
 };
 
 /** `og:locale` value. */
 export const OG_LOCALE: Record<Locale, string> = {
-  ru: "ru_RU",
   en: "en_US",
 };
 
 /** BCP-47 tag for Intl / toLocaleDateString formatting. */
 export const INTL_LOCALE: Record<Locale, string> = {
-  ru: "ru-RU",
   en: "en-US",
 };
 
 /** Switcher labels — deliberately language-neutral (shown in every locale). */
 export const LOCALE_LABEL: Record<Locale, string> = {
-  ru: "ru",
   en: "en",
 };
 
 /** Full name of each language, in that language (for the switcher's title). */
 export const LOCALE_NAME: Record<Locale, string> = {
-  ru: "Русский",
   en: "English",
 };

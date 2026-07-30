@@ -24,7 +24,7 @@ set by `NEXT_PUBLIC_SITE_PALETTE`, the default language by `NEXT_PUBLIC_SITE_LOC
 
 - **3 dark palettes** — voltage (electric lime, default), ember, plasma.
   Fonts: Geologica + Martian Mono + Golos Text, all with Cyrillic and Latin.
-- **Two languages, two prerendered pages** — Russian and English, with a `ru | en`
+- **Two languages, two prerendered pages** — Russian and English, with a `en`
   switcher in the header. See "Content & i18n" below.
 - **Interactive node flow** — `components/flow-diagram.tsx` is a miniature
   n8n-style canvas (lead ➔ AI analysis ➔ CRM) with orthogonal connectors carrying
@@ -95,7 +95,7 @@ redirect on the canonical URL:
 `app/[[...lang]]` is an optional catch-all, so both pages come out of
 `generateStaticParams` with the right `<html lang>`, canonical URL and `hreflang`
 alternates. `NEXT_PUBLIC_SITE_LOCALE=en` flips it: English at `/`, Russian at
-`/ru/`. The header's `ru | en` switcher (`components/lang-switcher.tsx`) links
+`/lang/`. The header's language switcher (`components/lang-switcher.tsx`) links
 between them.
 
 Adding a language: add the id to `LOCALES` in `lib/lang.ts` (plus its `HTML_LANG` /

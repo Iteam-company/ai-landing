@@ -144,14 +144,14 @@ landing page as before; the CLI decides which a client gets at onboarding.
   (`content/ru/{site,ui}.ts`, `content/en/{site,ui}.ts`), and `content/index.ts` is
   the registry (`getContent(locale)` / `getUi(locale)`). The Storyblok wiring is
   TPL-2.
-- **i18n (ru + en):** `lib/lang.ts` owns `LOCALES` and the routing shape — the
+- **i18n (en):** `lib/lang.ts` owns `LOCALES` and the routing shape — the
   default locale (`NEXT_PUBLIC_SITE_LOCALE`, default `ru`) is served at `/` and
   every other locale under `/<locale>/`. `app/[[...lang]]` is an optional
   catch-all whose layout is the site's root layout, so each locale is prerendered
   with its own `<html lang>`, canonical URL and `hreflang` alternates — no proxy,
   no redirect, static-export safe. `/admin` carries its own root layout and always
   renders in the default locale. `components/lang-switcher.tsx` is the header's
-  `ru | en` switch. `app/api/*` is not localized — it answers in English and each
+  language switch. `app/api/*` is not localized — it answers in English and each
   form shows its own copy; the `locale` a form posts is data (stored on the lead /
   booking, forwarded to n8n, and picks the language of the visitor's booking
   emails).
