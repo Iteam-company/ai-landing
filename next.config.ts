@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
   // trailingSlash:true would 308-redirect POST /api/* and drop the body, so the
   // server build turns it off; static builds keep the original behaviour.
   trailingSlash: !backend,
+  env: {
+    // Mirrors the flag above so lib/lang.ts can build locale URLs ("/en" vs
+    // "/en/") that hit the right one directly instead of taking a 308.
+    NEXT_PUBLIC_TRAILING_SLASH: backend ? "" : "1",
+  },
 };
 
 export default nextConfig;

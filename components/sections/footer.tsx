@@ -1,5 +1,5 @@
 import { Container } from "@/components/ui/container";
-import type { Site } from "@/content/site";
+import type { Site } from "@/content/types";
 
 interface FooterProps {
   content: Site["footer"];

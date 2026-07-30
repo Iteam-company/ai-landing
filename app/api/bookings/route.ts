@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/auth";
 import { sendMail } from "@/lib/mailer";
 import { bookingCustomerEmail, bookingAdminEmail } from "@/lib/emails";
 import { siteMeta } from "@/lib/site-meta";
+import { requestLocale } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,10 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
+
+  // The block posts the locale it was rendered in, so the confirmation email
+  // speaks the visitor's language. Error copy stays English — the form shows its own.
+  const locale = requestLocale(body.locale);
 
   const name = String(body.name ?? "").trim();
   const email = String(body.email ?? "").trim();
@@ -35,14 +40,16 @@ export async function POST(request: Request) {
     date,
     time,
     status: "pending",
+    locale,
     createdAt: new Date().toISOString(),
   };
 
   await (await bookings()).insertOne(doc);
 
-  // Theme-matched notifications (no-op when SMTP isn't configured).
+  // Theme-matched notifications (no-op when SMTP isn't configured). The visitor
+  // gets their own language; the agency gets the site's default one.
   const meta = siteMeta();
-  await sendMail({ to: doc.email, ...bookingCustomerEmail({ ...meta, booking: doc }) });
+  await sendMail({ to: doc.email, ...bookingCustomerEmail({ ...meta, locale, booking: doc }) });
   const adminTo = process.env.ADMIN_USER;
   if (adminTo) await sendMail({ to: adminTo, ...bookingAdminEmail({ ...meta, booking: doc }) });
 

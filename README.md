@@ -1,7 +1,7 @@
 # template-agency-ai-landing
 
 An EasyLand landing **template** — the **AI Agency / n8n Automation Studio**
-vertical. A Russian-language sales landing for an agency that builds AI agents and
+vertical. A bilingual (ru/en) sales landing for an agency that builds AI agents and
 n8n automations: an interactive node-flow hero, a pain grid, four agent modules,
 an auto-playing architecture demo, three pricing tiers, and a conversion zone with
 a Cal.com booking embed next to a webhook-backed lead form. It follows the shared
@@ -18,17 +18,19 @@ npm run lint
 ```
 
 Palette preview: append `?color=voltage|ember|plasma`. The build-time palette is
-set by `NEXT_PUBLIC_SITE_PALETTE`.
+set by `NEXT_PUBLIC_SITE_PALETTE`, the default language by `NEXT_PUBLIC_SITE_LOCALE`.
 
 ## Highlights
 
 - **3 dark palettes** — voltage (electric lime, default), ember, plasma.
-  Fonts: Geologica + Martian Mono + Golos Text, all with Cyrillic.
+  Fonts: Geologica + Martian Mono + Golos Text, all with Cyrillic and Latin.
+- **Two languages, two prerendered pages** — Russian and English, with a `ru | en`
+  switcher in the header. See "Content & i18n" below.
 - **Interactive node flow** — `components/flow-diagram.tsx` is a miniature
-  n8n-style canvas (Заявка ➔ AI-анализ ➔ CRM) with orthogonal connectors carrying
+  n8n-style canvas (lead ➔ AI analysis ➔ CRM) with orthogonal connectors carrying
   animated signal packets. Hover or focus a node to light it up.
 - **Live architecture demo** — `components/sections/showcase.tsx` walks a lead
-  through Входящий лид ➔ AI-анализ ➔ Карточка в CRM ➔ Уведомление в Telegram on a
+  through inbound lead ➔ AI analysis ➔ CRM deal ➔ Telegram alert on a
   loop; click any stage to take manual control. Static under
   `prefers-reduced-motion`.
 - **Conversion zone** — an embedded Cal.com calendar (plain `<iframe>`, no
@@ -64,22 +66,63 @@ void.
 | No feature | static export (`output: export`) | static host; lead form → n8n webhook |
 | Backend feature on | `EASYLAND_BACKEND=1` → `output: standalone` | Node host + `MONGODB_URI` |
 
-## Content
+## Content & i18n
 
-Single typed source: [`content/site.ts`](content/site.ts) — Russian only. Every
-section reads from the `site` object; the copy shipped here is demo content
-(brand "Neuroflow", placeholder prices and contacts). Storyblok wiring is TPL-2.
+One folder per locale, and the contract lives apart from the copy:
+
+```
+content/
+  types.ts        Site + Ui interfaces — the contract, no copy
+  index.ts        registry: getContent(locale) · getUi(locale)
+  ru/ site.ts     marketing copy      ru/ ui.ts     interface strings
+  en/ site.ts                         en/ ui.ts
+```
+
+`site` is the marketing copy each section reads (the Storyblok-seedable shape);
+`ui` is the chrome that is not marketing copy — button states, aria labels, form
+placeholders, error copy, the admin panel and the emails. The copy
+shipped here is demo content (brand "Neuroflow", placeholder prices and contacts).
+Storyblok wiring is TPL-2.
+
+Routing, from [`lib/lang.ts`](lib/lang.ts) — static-export safe, no proxy and no
+redirect on the canonical URL:
+
+| | URL | |
+| --- | --- | --- |
+| default locale (`NEXT_PUBLIC_SITE_LOCALE`, defaults to `ru`) | `/` | prerendered |
+| every other locale | `/en/` | prerendered |
+
+`app/[[...lang]]` is an optional catch-all, so both pages come out of
+`generateStaticParams` with the right `<html lang>`, canonical URL and `hreflang`
+alternates. `NEXT_PUBLIC_SITE_LOCALE=en` flips it: English at `/`, Russian at
+`/ru/`. The header's `ru | en` switcher (`components/lang-switcher.tsx`) links
+between them.
+
+Adding a language: add the id to `LOCALES` in `lib/lang.ts` (plus its `HTML_LANG` /
+`OG_LOCALE` / `INTL_LOCALE` / label entries), copy a `content/<id>/` folder and
+register it in the two maps in `content/index.ts`. Everything else — routing,
+metadata, the switcher — follows from `LOCALES`.
+
+The `app/api/*` routes are **not** localized: they answer in English, like any
+developer-facing API, and each form picks its own localized message (by status code
+where the distinction matters). What the visitor's locale *is* used for is data —
+it rides along as `locale` in the lead and booking payloads, so it is stored, gets
+forwarded to n8n, and decides the language of the booking confirmation email.
+`/admin` and the agency's own notification emails always use the default locale.
 
 ## Structure
 
 ```
-app/            layout (fonts + palette), page, globals.css, admin/, api/
-components/     landing.tsx (composition root)
+app/            fonts.ts, globals.css
+  [[...lang]]/  localized root layout (lang + metadata) + page
+  admin/        own root layout + dashboard (backend builds)
+  api/          route handlers (backend builds)
+components/     landing.tsx (composition root), lang-switcher.tsx
   sections/     header · hero · pains · solutions · showcase · pricing ·
                 booking* · customer-access* · contact · footer   (* feature-gated)
   ui/           button, card (Panel/PanelBar/Brackets/Chip), container
   flow-diagram.tsx · call-modal.tsx · cal-embed.tsx · lead-form.tsx
-lib/            palettes, features, leads, utils, site-meta,
+lib/            lang, palettes, features, leads, utils, site-meta,
                 mongo/auth/mailer/emails (server-only, backend builds)
-content/site.ts single typed content source (ru)
+content/        types.ts (contract), index.ts (registry), ru/, en/
 ```

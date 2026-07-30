@@ -1,7 +1,7 @@
 import { Container, Section, SectionHeading } from "@/components/ui/container";
 import { Panel, Brackets } from "@/components/ui/card";
 import { Reveal } from "@/components/motion/reveal";
-import type { Site } from "@/content/site";
+import type { Site } from "@/content/types";
 
 // Block 2 — business pains. A 2x2 grid where each cell reacts on hover: the
 // registration brackets fade in, the accent rail extends and the index flips to

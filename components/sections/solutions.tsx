@@ -2,7 +2,7 @@ import { Radar, Bot, Library, Workflow } from "lucide-react";
 import { Container, Section, SectionHeading } from "@/components/ui/container";
 import { Panel, Chip } from "@/components/ui/card";
 import { Reveal } from "@/components/motion/reveal";
-import type { Site } from "@/content/site";
+import type { Site } from "@/content/types";
 
 // Block 3 — what we actually sell. Four agent "modules", each a panel with an
 // icon tile that fills with the accent on hover and a tag rail along the bottom.
