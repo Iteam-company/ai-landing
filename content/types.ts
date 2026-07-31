@@ -32,16 +32,35 @@ export interface FlowNode {
 }
 
 export interface PainCard {
-  /** Mono category chip, e.g. "продажи". */
+  /** Mono category chip, e.g. "sales". */
   tag: string;
+  /** Large, scannable process metric, e.g. "< 1 min". */
+  metric: string;
+  /** What the metric measures. */
+  metricLabel: string;
   title: string;
   description: string;
+  /** Concrete operational change delivered by automation. */
+  outcome: string;
 }
 
 export interface Solution {
   index: string;
+  /** Product/module name shown as a secondary label. */
+  name: string;
+  /** Outcome-led headline. */
   title: string;
   description: string;
+  /** Compact, code-native example of the workflow in action. */
+  demo: {
+    caption: string;
+    ariaLabel: string;
+    steps: {
+      label: string;
+      text: string;
+      tone: "input" | "agent" | "result";
+    }[];
+  };
   /** Short mono tags — the services this agent touches. */
   tags: string[];
 }
@@ -66,6 +85,26 @@ export interface PricingTier {
   items: string[];
   cta: CtaLink;
   recommended?: boolean;
+}
+
+export type ComparisonOptionId = "automation" | "staff" | "custom";
+
+export interface ComparisonOption {
+  id: ComparisonOptionId;
+  name: string;
+  price: string;
+  priceNote: string;
+  highlighted?: boolean;
+}
+
+export interface ComparisonRow {
+  label: string;
+  values: Record<ComparisonOptionId, string>;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
 }
 
 export interface ContactChannel {
@@ -130,6 +169,30 @@ export interface Site {
     note: string;
     /** Mono caption on the player frame. */
     caption: string;
+  };
+  comparison: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    /** Mono label in the comparison panel's console bar. */
+    caption: string;
+    /** Screen-reader label for the empty criteria column header. */
+    criteriaLabel: string;
+    options: ComparisonOption[];
+    rows: ComparisonRow[];
+    note: string;
+    /** Transition link into the booking block below. */
+    transition: string;
+  };
+  faq: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    /** Mono label in the FAQ panel's console bar. */
+    caption: string;
+    items: FaqItem[];
+    /** Transition link into the booking block below. */
+    transition: string;
   };
   pricing: {
     eyebrow: string;

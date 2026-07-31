@@ -5,9 +5,9 @@ import type { Site } from "../types";
 
 export const site: Site = {
   meta: {
-    title: "Neuroflow — AI agents and n8n automation for business",
+    title: "Neuroflow — Cut costs and respond to leads faster in 7 days",
     description:
-      "We automate business routine with AI agents and n8n: 24/7 lead qualification, a CRM assistant, a RAG knowledge base and seamless integrations. First results in 7–14 days.",
+      "We launch business automation in 7 days to cut operating costs by up to 40%, process every lead faster and keep sales moving 24/7.",
     url: "https://neuroflow.agency",
     ogImage:
       "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
@@ -22,25 +22,26 @@ export const site: Site = {
       { label: "pains", href: "#pains" },
       { label: "solutions", href: "#solutions" },
       { label: "architecture", href: "#showcase" },
-      { label: "pricing", href: "#pricing" },
+      // { label: "pricing", href: "#pricing" },
+      { label: "comparison", href: "#comparison" },
       { label: "contact", href: "#contact" },
     ],
     cta: { label: "Book a call", href: "#contact" },
   },
   hero: {
-    eyebrow: "AI agents · n8n · process automation",
-    title: "We automate your business routine with AI agents and n8n",
+    eyebrow: "Cut costs · faster lead response · launch in 7 days",
+    title: "Save money and process every lead faster—in just 7 days",
     subtitle:
-      "We take the human bottleneck out of sales, support and CRM — cutting operating costs by up to 40% in 7–14 days.",
+      "We remove bottlenecks from sales, support and CRM—helping you cut operating costs by up to 40% while every new request gets an immediate response.",
     primaryCta: { label: "Book a call", href: "#contact" },
     secondaryCta: { label: "Send us a message", href: "#lead-form" },
     stats: [
-      { value: "40%", label: "of operating costs" },
-      { value: "7–14", label: "days to first results" },
-      { value: "24/7", label: "agents on duty" },
+      { value: "40%", label: "operating costs saved" },
+      { value: "7", label: "days to launch" },
+      { value: "24/7", label: "leads processed" },
     ],
     flow: {
-      label: "lead-router.n8n",
+      label: "lead-response.workflow",
       nodes: [
         { id: "lead", label: "Lead", meta: "webhook" },
         { id: "ai", label: "AI analysis", meta: "gpt · BANT" },
@@ -69,31 +70,47 @@ export const site: Site = {
     eyebrow: "01 · business pains",
     title: "Where exactly your money leaks out",
     subtitle:
-      "The four bottlenecks we close most often. Hover a card — we'll show what goes in its place.",
+      "Four measurable bottlenecks that drain time and revenue—and what changes when the routine is automated.",
     cards: [
       {
         tag: "sales",
-        title: "Slow response to new leads",
+        metric: "< 1 min",
+        metricLabel: "target response time",
+        title: "How many leads do you lose while they wait?",
         description:
-          "Leads go cold or move on to a competitor while your manager is busy on another conversation.",
+          "When a reply takes hours, the conversation often starts with a competitor instead.",
+        outcome:
+          "Automation answers, qualifies and routes every new request immediately—24/7.",
       },
       {
         tag: "crm",
-        title: "Managers live in spreadsheets",
+        metric: "HOURS",
+        metricLabel: "lost every week",
+        title: "How much selling time disappears into CRM updates?",
         description:
-          "Instead of selling, managers sit in spreadsheets, write follow-ups and fill in deal cards by hand.",
+          "Managers copy notes, prepare follow-ups and fill in deal cards instead of speaking to customers.",
+        outcome:
+          "Call summaries, CRM fields, tasks and follow-ups are created automatically.",
       },
       {
         tag: "support",
-        title: "The same questions, every day",
+        metric: "24/7",
+        metricLabel: "routine support",
+        title: "How much of the team’s day goes to repeat questions?",
         description:
-          "The team drowns in repeat questions while the knowledge base gathers dust in Notion and Google Drive.",
+          "Simple requests compete with complex cases for the same limited attention.",
+        outcome:
+          "A knowledge assistant responds instantly and links every answer back to its source.",
       },
       {
         tag: "analytics",
-        title: "Reports only land on Fridays",
+        metric: "LIVE",
+        metricLabel: "operational visibility",
+        title: "How much does yesterday’s data cost you?",
         description:
-          "Data is scattered across services — reports are assembled by hand and always arrive late.",
+          "Manually assembled reports arrive after the moment to act has already passed.",
+        outcome:
+          "Sales and operational metrics update automatically as the underlying data changes.",
       },
     ],
   },
@@ -105,30 +122,70 @@ export const site: Site = {
     items: [
       {
         index: "01",
-        title: "AI Lead Qualifier (24/7)",
+        name: "AI Lead Qualifier",
+        title: "More qualified calls—without manager involvement",
         description:
-          "Picks up requests from messengers, forms and email. Asks BANT questions, filters out bad fits and drops your calendar link right into the chat.",
+          "Responds in under a minute, asks the right questions and offers a meeting slot when the lead is ready.",
+        demo: {
+          caption: "Telegram · sample conversation",
+          ariaLabel: "Example of an AI qualifier booking a sales call",
+          steps: [
+            { label: "Lead", text: "We need to automate our sales process", tone: "input" },
+            { label: "AI qualifier", text: "Volume and timeline captured", tone: "agent" },
+            { label: "Calendar", text: "Qualified call booked · 14:30", tone: "result" },
+          ],
+        },
         tags: ["Telegram / WhatsApp", "BANT scoring", "Calendar", "CRM"],
       },
       {
         index: "02",
-        title: "AI CRM Assistant",
+        name: "AI CRM Assistant",
+        title: "Returns selling hours to every manager, every week",
         description:
-          "Transcribes Zoom calls, summarises what was agreed, creates CRM tasks on its own and lays your proposal out as a PDF.",
+          "Turns every sales call into a clean summary, updated CRM fields and a ready-to-run follow-up task.",
+        demo: {
+          caption: "CRM · post-call workflow",
+          ariaLabel: "Example of an AI assistant updating the CRM after a call",
+          steps: [
+            { label: "Zoom", text: "Discovery call ended · 26 min", tone: "input" },
+            { label: "AI assistant", text: "Needs, objections and next step extracted", tone: "agent" },
+            { label: "CRM", text: "Deal updated · follow-up created", tone: "result" },
+          ],
+        },
         tags: ["Transcription", "Summaries", "CRM tasks", "PDF proposals"],
       },
       {
         index: "03",
-        title: "Smart Knowledge Base (RAG)",
+        name: "Knowledge Assistant",
+        title: "Answers routine questions in seconds—with sources",
         description:
-          "A bot trained on your playbooks and PDFs. Answers staff or customers instantly — in 3 seconds, with a link to the source.",
+          "Finds the answer across your playbooks, PDFs and workspace, then shows exactly where it came from.",
+        demo: {
+          caption: "Knowledge base · sample query",
+          ariaLabel: "Example of a knowledge assistant answering from company documents",
+          steps: [
+            { label: "Question", text: "What is our refund policy?", tone: "input" },
+            { label: "Knowledge agent", text: "Answer prepared from approved documents", tone: "agent" },
+            { label: "Sources", text: "Policy.pdf · section 4.2", tone: "result" },
+          ],
+        },
         tags: ["RAG", "Vector store", "Playbooks", "Source links"],
       },
       {
         index: "04",
-        title: "Seamless n8n automations",
+        name: "Workflow Automation",
+        title: "Moves data between your tools without manual work",
         description:
-          "We wire any services together — CRM, messengers, ad platforms, spreadsheets — with no overpaying for extra software and no zoo of subscriptions.",
+          "Connects forms, CRM, messengers and spreadsheets so every routine step happens in the right system.",
+        demo: {
+          caption: "Operations · sample workflow",
+          ariaLabel: "Example of an automated lead routing workflow",
+          steps: [
+            { label: "Website", text: "New enterprise request received", tone: "input" },
+            { label: "Workflow", text: "Lead enriched, scored and routed", tone: "agent" },
+            { label: "CRM + Slack", text: "Deal created · team notified", tone: "result" },
+          ],
+        },
         tags: ["n8n", "Webhooks", "API", "Self-hosted"],
       },
     ],
@@ -170,6 +227,122 @@ export const site: Site = {
     ],
     note: "Transparent architecture: the data belongs to you and the logic stays fully under your control.",
     caption: "pipeline · demo",
+  },
+  comparison: {
+    eyebrow: "04 · cost comparison",
+    title: "Three ways to handle the same operational workload",
+    subtitle:
+      "Add more people, build a custom platform, or automate the repetitive part of the process.",
+    caption: "cost · comparison",
+    criteriaLabel: "Comparison criterion",
+    options: [
+      {
+        id: "automation",
+        name: "AI automation",
+        price: "from €3,900",
+        priceNote: "one-time setup",
+        highlighted: true,
+      },
+      {
+        id: "staff",
+        name: "Additional staff",
+        price: "from €30,000",
+        priceNote: "every year",
+      },
+      {
+        id: "custom",
+        name: "Custom development",
+        price: "from €50,000",
+        priceNote: "upfront",
+      },
+    ],
+    rows: [
+      {
+        label: "Cost model",
+        values: {
+          automation: "One-time implementation with optional support",
+          staff: "Recurring payroll and overhead",
+          custom: "Upfront build plus ongoing maintenance",
+        },
+      },
+      {
+        label: "Launch",
+        values: {
+          automation: "First workflow in 7 days",
+          staff: "Hiring and onboarding",
+          custom: "Several months",
+        },
+      },
+      {
+        label: "Availability",
+        values: {
+          automation: "24/7",
+          staff: "Business hours",
+          custom: "Depends on implementation",
+        },
+      },
+      {
+        label: "Scaling",
+        values: {
+          automation: "Extend the workflow",
+          staff: "Hire and onboard again",
+          custom: "Start a new development cycle",
+        },
+      },
+      {
+        label: "Routine work",
+        values: {
+          automation: "Runs automatically",
+          staff: "Remains manual",
+          custom: "Must be specified and built",
+        },
+      },
+      {
+        label: "Best fit",
+        values: {
+          automation: "Proven processes ready to automate",
+          staff: "Work requiring human judgment",
+          custom: "Unique product-level requirements",
+        },
+      },
+    ],
+    note:
+      "Illustrative comparison for a typical sales or operations workflow. Final costs depend on process scope, location, integrations and support requirements.",
+    transition: "Questions about control or ongoing support?",
+  },
+  faq: {
+    eyebrow: "05 · frequently asked questions",
+    title: "What happens after the automation goes live?",
+    subtitle: "Clear answers about control, reliability and ongoing support.",
+    caption: "faq · operations",
+    items: [
+      {
+        question: "What happens if the AI gets something wrong?",
+        answer:
+          "Critical actions never have to run blindly. We set confidence thresholds and route uncertain or high-risk cases to a manager in Telegram or CRM. Every decision is logged, so the workflow can be reviewed and corrected.",
+      },
+      {
+        question: "Which actions can require human approval?",
+        answer:
+          "You decide where the agent can act independently. Routine replies may be automatic, while discounts, contracts, payments or sensitive customer decisions can require explicit approval.",
+      },
+      {
+        question: "What is included in ongoing support?",
+        answer:
+          "The Business System includes one month of post-launch support. After that, you can request changes as needed or choose an optional monthly support plan agreed before handover.",
+      },
+      {
+        question: "Can you work with our existing CRM and tools?",
+        answer:
+          "Usually, yes. We connect to your current CRM, messengers, calendar and data sources through APIs and webhooks. If a system has technical limitations, we identify them during the process review before development starts.",
+      },
+      {
+        question: "Can the workflow be changed after launch?",
+        answer:
+          "Yes. Prompts, routing rules, approval steps and integrations can be updated as your process changes. You do not need to rebuild the entire system for every adjustment.",
+      },
+    ],
+    transition: "Have a process in mind? Let’s review the risks and costs together",
   },
   pricing: {
     eyebrow: "04 · pricing",
@@ -224,7 +397,7 @@ export const site: Site = {
     note: "Contract-based · NDA on request · staged payments",
   },
   contact: {
-    eyebrow: "05 · get in touch",
+    eyebrow: "06 · get in touch",
     title: "Claim your 40% of operating costs",
     subtitle:
       "Pick a slot in the calendar or describe your task in the form — we reply within one business day.",
@@ -274,7 +447,7 @@ export const site: Site = {
     copyright: "© {year} Neuroflow. Automation without magic — just processes and logs.",
     links: [
       { label: "solutions", href: "#solutions" },
-      { label: "pricing", href: "#pricing" },
+      { label: "comparison", href: "#comparison" },
       { label: "contact", href: "#contact" },
     ],
     note: "Working remotely · timezone UTC+2",

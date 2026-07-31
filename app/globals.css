@@ -126,6 +126,69 @@
     -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
   }
 
+  /* Featured comparison column. Hovering any of its cells energises the whole
+     rail, so the table reads as one connected system rather than separate rows. */
+  .comparison-table [data-featured],
+  .comparison-table [data-featured-label],
+  .comparison-table [data-featured-price],
+  .comparison-table [data-featured-signal],
+  .comparison-table [data-featured-bracket] {
+    transition:
+      color 300ms ease,
+      background-color 300ms ease,
+      border-color 300ms ease,
+      box-shadow 300ms ease,
+      opacity 300ms ease,
+      transform 300ms ease;
+  }
+
+  .comparison-table [data-featured-bracket] {
+    opacity: 0.45;
+  }
+
+  @media (hover: hover) {
+    .comparison-table:has([data-featured]:hover) [data-featured] {
+      background-color: color-mix(
+        in oklab,
+        var(--color-accent) 10%,
+        var(--color-bg-card)
+      );
+      border-color: color-mix(in oklab, var(--color-accent) 62%, transparent);
+      box-shadow: inset 0 0 28px color-mix(in oklab, var(--color-accent) 7%, transparent);
+    }
+
+    .comparison-table:has([data-featured]:hover) [data-featured-label],
+    .comparison-table:has([data-featured]:hover) [data-featured-price] {
+      color: var(--color-accent);
+    }
+
+    .comparison-table:has([data-featured]:hover) [data-featured-price] {
+      transform: translateY(-2px);
+      text-shadow: 0 0 24px color-mix(in oklab, var(--color-accent) 28%, transparent);
+    }
+
+    .comparison-table:has([data-featured]:hover) [data-featured-signal] {
+      transform: scale(1.25);
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-accent) 16%, transparent);
+    }
+
+    .comparison-table:has([data-featured]:hover) [data-featured-bracket] {
+      border-color: var(--color-accent);
+      opacity: 1;
+      transform: scale(1.08);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .comparison-table [data-featured],
+    .comparison-table [data-featured-label],
+    .comparison-table [data-featured-price],
+    .comparison-table [data-featured-signal],
+    .comparison-table [data-featured-bracket] {
+      transition-duration: 0.01ms;
+    }
+  }
+
   /* Soft accent bloom — the glow of a running signal. */
   .bloom {
     background-image: radial-gradient(
