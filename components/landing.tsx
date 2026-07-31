@@ -3,6 +3,7 @@ import { Hero } from "@/components/sections/hero";
 import { Pains } from "@/components/sections/pains";
 import { Solutions } from "@/components/sections/solutions";
 import { Showcase } from "@/components/sections/showcase";
+import { About } from "@/components/sections/about";
 // import { Pricing } from "@/components/sections/pricing";
 import { Comparison } from "@/components/sections/comparison";
 import { Faq } from "@/components/sections/faq";
@@ -31,6 +32,7 @@ export function Landing({ locale }: { locale: Locale }) {
         <Pains content={site.pains} />
         <Solutions content={site.solutions} />
         <Showcase content={site.showcase} />
+        <About content={site.about} />
         {/* <Pricing content={site.pricing} recommendedLabel={ui.pricing.recommended} /> */}
         <Comparison
           content={site.comparison}

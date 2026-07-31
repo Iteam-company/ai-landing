@@ -107,6 +107,34 @@ export interface FaqItem {
   answer: string;
 }
 
+export interface AboutItem {
+  label: string;
+  metric: string;
+  title: string;
+  description: string;
+  tags: string[];
+}
+
+export interface FounderProfile {
+  /** Mono label in the founder panel's console bar. */
+  caption: string;
+  name: string;
+  role: string;
+  monogram: string;
+  image?: string;
+  imageAlt: string;
+  quote: string;
+  description: string;
+  delivery: string;
+  stats: Stat[];
+  proof: {
+    label: string;
+    project: string;
+    results: string[];
+  };
+  linkedin: CtaLink;
+}
+
 export interface ContactChannel {
   label: string;
   value: string;
@@ -169,6 +197,13 @@ export interface Site {
     note: string;
     /** Mono caption on the player frame. */
     caption: string;
+  };
+  about: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    items: AboutItem[];
+    founder: FounderProfile;
   };
   comparison: {
     eyebrow: string;

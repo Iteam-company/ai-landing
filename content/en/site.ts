@@ -23,7 +23,7 @@ export const site: Site = {
       { label: "solutions", href: "#solutions" },
       { label: "architecture", href: "#showcase" },
       // { label: "pricing", href: "#pricing" },
-      { label: "comparison", href: "#comparison" },
+      { label: "about us", href: "#about" },
       { label: "contact", href: "#contact" },
     ],
     cta: { label: "Book a call", href: "#contact" },
@@ -228,8 +228,67 @@ export const site: Site = {
     note: "Transparent architecture: the data belongs to you and the logic stays fully under your control.",
     caption: "pipeline · demo",
   },
+  about: {
+    eyebrow: "04 · about us",
+    title: "AI architecture by entrepreneurs, for entrepreneurs",
+    subtitle:
+      "We implement automation with a deep understanding of business economics, P&L and operational processes.",
+    items: [
+      {
+        label: "experience",
+        metric: "5+ years",
+        title: "In real business",
+        description:
+          "We have launched and scaled IT products, restaurant businesses and marketing agencies. We know firsthand where money is lost to routine work—and how difficult it is to protect margins as headcount grows.",
+        tags: ["IT products", "Restaurants", "Agencies"],
+      },
+      {
+        label: "economics",
+        metric: "ROI first",
+        title: "Focus on ROI and business economics",
+        description:
+          "We do not sell technology for technology’s sake or complex n8n stacks. We sell business outcomes: up to 40% lower OPEX, instant lead response and a system designed to pay for itself in the first weeks.",
+        tags: ["P&L", "OPEX", "Payback"],
+      },
+      {
+        label: "scale",
+        metric: "Lean scale",
+        title: "Systemic crisis management",
+        description:
+          "For us, automation is a tool for scaling without bloating payroll. We redesign process bottlenecks so the system can withstand multiple increases in workload.",
+        tags: ["Payroll", "Bottlenecks", "Capacity"],
+      },
+    ],
+    founder: {
+      caption: "founder · operator perspective",
+      name: "Dmytro Nych",
+      role: "Founder · Neuroflow.ai",
+      monogram: "DN",
+      imageAlt: "Portrait of Dmytro Nych, founder of Neuroflow.ai",
+      quote:
+        "The biggest mistake in AI adoption is entrusting it to people who have never run a business themselves.",
+      description:
+        "When you run a business, you quickly learn to account for every manager’s minute and every lost lead. We created Neuroflow.ai to give founders and C-level teams a transparent, secure AI system that works 24/7 without depending on manual execution.",
+      delivery:
+        "We take ownership of the entire journey—from a deep process audit to production-ready architecture delivered end to end.",
+      stats: [
+        { value: "5+", label: "years building products" },
+        { value: "30+", label: "MVPs delivered" },
+        { value: "US · EU", label: "project geography" },
+      ],
+      proof: {
+        label: "selected result",
+        project: "Gate-O1",
+        results: ["up to 80% less manual processing", "60% faster case decisions"],
+      },
+      linkedin: {
+        label: "LinkedIn",
+        href: "https://www.linkedin.com/in/dmytro-nych/",
+      },
+    },
+  },
   comparison: {
-    eyebrow: "04 · cost comparison",
+    eyebrow: "05 · cost comparison",
     title: "Three ways to handle the same operational workload",
     subtitle:
       "Add more people, build a custom platform, or automate the repetitive part of the process.",
@@ -311,7 +370,7 @@ export const site: Site = {
     transition: "Questions about control or ongoing support?",
   },
   faq: {
-    eyebrow: "05 · frequently asked questions",
+    eyebrow: "06 · frequently asked questions",
     title: "What happens after the automation goes live?",
     subtitle: "Clear answers about control, reliability and ongoing support.",
     caption: "faq · operations",
@@ -397,7 +456,7 @@ export const site: Site = {
     note: "Contract-based · NDA on request · staged payments",
   },
   contact: {
-    eyebrow: "06 · get in touch",
+    eyebrow: "07 · get in touch",
     title: "Claim your 40% of operating costs",
     subtitle:
       "Pick a slot in the calendar or describe your task in the form — we reply within one business day.",
