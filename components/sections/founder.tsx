@@ -39,7 +39,10 @@ export function Founder({ content }: { content: FounderProfile }) {
               className="object-cover grayscale transition duration-500 group-hover:grayscale-0"
             />
           ) : (
-            <div aria-hidden className="relative flex min-h-64 h-full items-center justify-center">
+            <div
+              aria-hidden
+              className="relative flex min-h-64 h-full items-center justify-center"
+            >
               <span className="font-display text-7xl font-semibold tracking-[-0.08em] text-accent/85 transition-all duration-500 group-hover:text-accent group-hover:drop-shadow-[0_0_18px_color-mix(in_oklab,var(--color-accent)_24%,transparent)]">
                 {content.monogram}
               </span>
@@ -72,7 +75,11 @@ export function Founder({ content }: { content: FounderProfile }) {
             {content.stats.map((stat, index) => (
               <div
                 key={stat.label}
-                className={index > 0 ? "border-l border-border px-3 py-4 sm:px-5" : "py-4 pr-3 sm:pr-5"}
+                className={
+                  index > 0
+                    ? "border-l border-border px-3 py-4 sm:px-5"
+                    : "py-4 pr-3 sm:pr-5"
+                }
               >
                 <dt className="font-display text-lg font-semibold text-accent sm:text-xl">
                   {stat.value}

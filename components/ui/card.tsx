@@ -30,9 +30,12 @@ Panel.displayName = "Panel";
  * registration marks on a schematic. Purely decorative.
  */
 export function Brackets({ className }: { className?: string }) {
-  const base = "pointer-events-none absolute h-3 w-3 border-accent/45 transition-colors";
+  const base = "absolute h-3 w-3 border-accent/45 transition-colors";
   return (
-    <span aria-hidden className={cn("absolute inset-0", className)}>
+    <span
+      aria-hidden
+      className={cn("pointer-events-none absolute inset-0", className)}
+    >
       <span className={cn(base, "left-2 top-2 border-l border-t")} />
       <span className={cn(base, "right-2 top-2 border-r border-t")} />
       <span className={cn(base, "bottom-2 left-2 border-b border-l")} />
