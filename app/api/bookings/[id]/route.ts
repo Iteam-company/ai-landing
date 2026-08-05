@@ -28,7 +28,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // Email the customer when their booking is confirmed (no-op without SMTP).
   if (status === "confirmed") {
     const doc = await col.findOne({ id }, { projection: { _id: 0 } });
-    if (doc) await sendMail({ to: doc.email, ...bookingConfirmedEmail({ ...siteMeta(), booking: doc }) });
+    if (doc) {
+      // Written in the language the visitor booked in (see BookingDoc.locale).
+      await sendMail({
+        to: doc.email,
+        ...bookingConfirmedEmail({ ...siteMeta(), locale: doc.locale, booking: doc }),
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });

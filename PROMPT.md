@@ -68,7 +68,7 @@ description; keep it accurate.
 | `defaultPalette` | string | the build-time default palette |
 | `paletteEnvVar` | string | env var the build reads (`NEXT_PUBLIC_SITE_PALETTE`) |
 | `blocks[]` | `{ name, component, label }` | block inventory (docs + future Storyblok seeding) |
-| `content` | `{ source, locales, note }` | informational |
+| `content` | `{ source, locales, defaultLocale, localeEnvVar, note }` | informational |
 | `storyblok` | `{ status, note }` | informational (TPL-2) |
 
 A `template-*` repo with no `easyland.template.json` still appears, but only with
@@ -139,8 +139,22 @@ landing page as before; the CLI decides which a client gets at onboarding.
   corner registration brackets on panels, wide blocky monospace labels in
   uppercase, softly-rounded console panels. Fonts: Geologica (display),
   Martian Mono (mono), Golos Text (body) — all with Cyrillic.
-- **Content:** a single typed source in `content/site.ts` (**Russian only**); the
-  Storyblok wiring is TPL-2.
+- **Content:** the contract is types-only in `content/types.ts` (`Site` for
+  marketing copy, `Ui` for interface chrome), the copy is one folder per locale
+  (`content/ru/{site,ui}.ts`, `content/en/{site,ui}.ts`), and `content/index.ts` is
+  the registry (`getContent(locale)` / `getUi(locale)`). The Storyblok wiring is
+  TPL-2.
+- **i18n (en):** `lib/lang.ts` owns `LOCALES` and the routing shape — the
+  default locale (`NEXT_PUBLIC_SITE_LOCALE`, default `ru`) is served at `/` and
+  every other locale under `/<locale>/`. `app/[[...lang]]` is an optional
+  catch-all whose layout is the site's root layout, so each locale is prerendered
+  with its own `<html lang>`, canonical URL and `hreflang` alternates — no proxy,
+  no redirect, static-export safe. `/admin` carries its own root layout and always
+  renders in the default locale. `components/lang-switcher.tsx` is the header's
+  language switch. `app/api/*` is not localized — it answers in English and each
+  form shows its own copy; the `locale` a form posts is data (stored on the lead /
+  booking, forwarded to n8n, and picks the language of the visitor's booking
+  emails).
 - **Integrations (template-specific, static-export safe):**
   - **Scheduling** — `components/cal-embed.tsx` renders a plain `<iframe>` (no
     third-party script) from `NEXT_PUBLIC_CAL_LINK` (`"acme/30min"` →

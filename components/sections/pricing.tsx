@@ -4,12 +4,18 @@ import { Panel } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
-import type { Site } from "@/content/site";
+import type { Site } from "@/content/types";
 
 // Block 5 — three engagement formats. The middle tier is the recommended one:
 // it lifts off the row, carries the accent ring and gets the primary CTA.
 
-export function Pricing({ content }: { content: Site["pricing"] }) {
+export function Pricing({
+  content,
+  recommendedLabel,
+}: {
+  content: Site["pricing"];
+  recommendedLabel: string;
+}) {
   return (
     <Section id="pricing" className="border-t border-border bg-bg-soft/40">
       <Container>
@@ -38,7 +44,7 @@ export function Pricing({ content }: { content: Site["pricing"] }) {
                   </span>
                   {tier.recommended ? (
                     <span className="rounded-full bg-accent px-2.5 py-1 font-mono text-[10px] uppercase text-accent-fg">
-                      рекомендуем
+                      {recommendedLabel}
                     </span>
                   ) : null}
                 </div>

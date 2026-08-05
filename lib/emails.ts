@@ -1,7 +1,16 @@
 // Theme-matched HTML email builders for the booking + lead flows. Pure string
 // builders (no server-only deps) — the routes pass the client's brand + accent so
 // each email matches the site's look. Inline styles only (email clients ignore
-// <style>). Copy is Russian, like the rest of this template.
+// <style>).
+//
+// Copy comes from `content/<locale>/ui.ts` → `emails`: visitor-facing mail is
+// written in the language the visitor used (stored on the booking), while the
+// agency's own notifications default to the build's DEFAULT_LOCALE.
+
+import { getUi } from "@/content";
+import type { Ui } from "@/content/types";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/lang";
+import { fill } from "@/lib/utils";
 
 export interface EmailBooking {
   name: string;
@@ -23,16 +32,21 @@ export interface EmailLead {
 interface Theme {
   brand: string;
   accent: string; // hex, the client's palette accent
-  booking: EmailBooking;
+  /** Language of this email. Defaults to the build's default locale. */
+  locale?: Locale;
 }
 
-function rows(b: EmailBooking): [string, string][] {
+type BookingEmail = Theme & { booking: EmailBooking };
+
+type Fields = Ui["emails"]["fields"];
+
+function rows(b: EmailBooking, f: Fields): [string, string][] {
   return [
-    ["Когда", `${b.date} · ${b.time}`],
-    ["Имя", b.name],
-    ["Email", b.email],
-    ...(b.phone ? ([["Телефон", b.phone]] as [string, string][]) : []),
-    ...(b.note ? ([["Комментарий", b.note]] as [string, string][]) : []),
+    [f.when, `${b.date} · ${b.time}`],
+    [f.name, b.name],
+    [f.email, b.email],
+    ...(b.phone ? ([[f.phone, b.phone]] as [string, string][]) : []),
+    ...(b.note ? ([[f.note, b.note]] as [string, string][]) : []),
   ];
 }
 
@@ -93,44 +107,67 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function bookingCustomerEmail({ brand, accent, booking }: Theme): { subject: string; html: string } {
+export function bookingCustomerEmail({
+  brand,
+  accent,
+  locale = DEFAULT_LOCALE,
+  booking,
+}: BookingEmail): { subject: string; html: string } {
+  const t = getUi(locale).emails;
+  const name = booking.name.split(" ")[0] || booking.name;
   return {
-    subject: `Заявка на созвон принята — ${brand}`,
+    subject: fill(t.bookingCustomer.subject, { brand }),
     html: shell({
       brand,
       accent,
-      title: `Спасибо, ${booking.name.split(" ")[0] || booking.name}!`,
-      intro: "Мы получили вашу заявку на созвон и подтвердим её письмом в ближайшее время.",
-      details: rows(booking),
-      footer: "Если вы не оставляли заявку, просто проигнорируйте это письмо.",
+      title: fill(t.bookingCustomer.title, { name }),
+      intro: t.bookingCustomer.intro,
+      details: rows(booking, t.fields),
+      footer: fill(t.bookingCustomer.footer, { brand }),
     }),
   };
 }
 
-export function bookingAdminEmail({ brand, accent, booking }: Theme): { subject: string; html: string } {
+export function bookingAdminEmail({
+  brand,
+  accent,
+  locale = DEFAULT_LOCALE,
+  booking,
+}: BookingEmail): { subject: string; html: string } {
+  const t = getUi(locale).emails;
   return {
-    subject: `Новая заявка на созвон: ${booking.name} — ${booking.date} ${booking.time}`,
+    subject: fill(t.bookingAdmin.subject, {
+      name: booking.name,
+      date: booking.date,
+      time: booking.time,
+    }),
     html: shell({
       brand,
       accent,
-      title: "Новая заявка на созвон",
-      intro: "Пришла новая заявка. Откройте админ-панель, чтобы подтвердить или отменить её.",
-      details: rows(booking),
-      footer: `Отправлено автоматически с сайта ${brand}.`,
+      title: t.bookingAdmin.title,
+      intro: t.bookingAdmin.intro,
+      details: rows(booking, t.fields),
+      footer: fill(t.bookingAdmin.footer, { brand }),
     }),
   };
 }
 
-export function bookingConfirmedEmail({ brand, accent, booking }: Theme): { subject: string; html: string } {
+export function bookingConfirmedEmail({
+  brand,
+  accent,
+  locale = DEFAULT_LOCALE,
+  booking,
+}: BookingEmail): { subject: string; html: string } {
+  const t = getUi(locale).emails;
   return {
-    subject: `Созвон подтверждён — ${brand}`,
+    subject: fill(t.bookingConfirmed.subject, { brand }),
     html: shell({
       brand,
       accent,
-      title: "Созвон подтверждён",
-      intro: "Ваш созвон подтверждён — ссылка на встречу придёт отдельным письмом. До связи!",
-      details: rows(booking),
-      footer: "Нужно перенести? Просто ответьте на это письмо.",
+      title: t.bookingConfirmed.title,
+      intro: t.bookingConfirmed.intro,
+      details: rows(booking, t.fields),
+      footer: fill(t.bookingConfirmed.footer, { brand }),
     }),
   };
 }
@@ -139,26 +176,24 @@ export function bookingConfirmedEmail({ brand, accent, booking }: Theme): { subj
 export function leadAdminEmail({
   brand,
   accent,
+  locale = DEFAULT_LOCALE,
   lead,
-}: {
-  brand: string;
-  accent: string;
-  lead: EmailLead;
-}): { subject: string; html: string } {
+}: Theme & { lead: EmailLead }): { subject: string; html: string } {
+  const t = getUi(locale).emails;
   return {
-    subject: `Новая заявка с сайта: ${lead.name}`,
+    subject: fill(t.leadAdmin.subject, { name: lead.name }),
     html: shell({
       brand,
       accent,
-      title: "Новая заявка с сайта",
-      intro: "Кто-то заполнил форму в блоке контактов. Свяжитесь, пока лид горячий.",
+      title: t.leadAdmin.title,
+      intro: t.leadAdmin.intro,
       details: [
-        ["Имя", lead.name],
-        ["Контакт", lead.contact],
-        ...(lead.task ? ([["Задача", lead.task]] as [string, string][]) : []),
-        ["Источник", lead.source],
+        [t.fields.name, lead.name],
+        [t.fields.contact, lead.contact],
+        ...(lead.task ? ([[t.fields.task, lead.task]] as [string, string][]) : []),
+        [t.fields.source, lead.source],
       ],
-      footer: `Отправлено автоматически с сайта ${brand}.`,
+      footer: fill(t.leadAdmin.footer, { brand }),
     }),
   };
 }

@@ -34,8 +34,10 @@
   ],
   "content": {
     "source": "local",
-    "locales": ["ru"],
-    "note": "Content is a single typed source (content/site.ts), Russian only. Storyblok wiring (BlockProvider + delivery client + per-block schema) is tracked in TPL-2."
+    "locales": ["en"],
+    "defaultLocale": "en",
+    "localeEnvVar": "NEXT_PUBLIC_SITE_LOCALE",
+    "note": "Contract in content/types.ts (Site = marketing copy, Ui = interface strings), copy per locale in content/<locale>/site.ts + content/<locale>/ui.ts, resolved by content/index.ts (getContent/getUi). The default locale is served at / and any additional locale under /<locale>/ (app/[[...lang]], all prerendered — static-export safe); the header's switcher hides itself while LOCALES has a single entry. Storyblok wiring (BlockProvider + delivery client + per-block schema) is tracked in TPL-2."
   },
   "storyblok": {
     "status": "pending",
