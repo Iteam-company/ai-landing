@@ -6,7 +6,8 @@ import { Panel, PanelBar } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
-import type { SiteContent } from "@/content/site";
+import type { SiteContent, Ui } from "@/content/types";
+import { INTL_LOCALE, type Locale } from "@/lib/lang";
 
 // Customer accounts — sign in / up portal. Feature: "customers".
 // Talks to the server routes under /api/auth/* (present only in backend builds).
@@ -21,7 +22,15 @@ interface Profile {
 const inputClass =
   "w-full rounded-[var(--radius-input)] border border-border bg-bg px-4 py-3.5 text-[15px] text-fg placeholder:text-fg-muted/60 outline-none transition-colors focus:border-accent/60";
 
-export function CustomerAccess({ content }: { content: SiteContent["customers"] }) {
+export function CustomerAccess({
+  content,
+  ui,
+  locale,
+}: {
+  content: SiteContent["customers"];
+  ui: Ui["portal"];
+  locale: Locale;
+}) {
   const [mode, setMode] = React.useState<"login" | "signup">("login");
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -50,14 +59,17 @@ export function CustomerAccess({ content }: { content: SiteContent["customers"] 
           phone: form.get("phone") || undefined,
         }),
       });
+      // The routes answer in English (they are developer-facing), so the portal
+      // picks its own localized copy from the status code.
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || "Что-то пошло не так.");
+        throw new Error(
+          res.status === 409 ? ui.emailTaken : res.status === 401 ? ui.badCredentials : ui.failed,
+        );
       }
       const me = await fetch("/api/auth/me").then((r) => r.json());
       setProfile(me.customer);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Что-то пошло не так.");
+      setError(err instanceof Error ? err.message : ui.failed);
     } finally {
       setBusy(false);
     }
@@ -85,24 +97,24 @@ export function CustomerAccess({ content }: { content: SiteContent["customers"] 
             <div className="p-6 sm:p-7">
               {profile ? (
                 <div className="space-y-4">
-                  <Row label="аккаунт" value={profile.email} />
-                  <Row label="бонусы" value={`${profile.bonuses} pts`} accent />
+                  <Row label={ui.account} value={profile.email} />
+                  <Row label={ui.bonuses} value={`${profile.bonuses} pts`} accent />
                   <Row
-                    label="последний вход"
-                    value={new Date(profile.lastVisited).toLocaleString("ru-RU")}
+                    label={ui.lastVisit}
+                    value={new Date(profile.lastVisited).toLocaleString(INTL_LOCALE[locale])}
                   />
                   <Button variant="secondary" className="w-full" onClick={logout}>
-                    Выйти
+                    {ui.logout}
                   </Button>
                 </div>
               ) : (
                 <>
                   <div className="mb-6 flex gap-2">
                     <Tab active={mode === "login"} onClick={() => setMode("login")}>
-                      Вход
+                      {ui.tabLogin}
                     </Tab>
                     <Tab active={mode === "signup"} onClick={() => setMode("signup")}>
-                      Регистрация
+                      {ui.tabSignup}
                     </Tab>
                   </div>
                   <form onSubmit={submit} className="space-y-3.5">
@@ -111,16 +123,18 @@ export function CustomerAccess({ content }: { content: SiteContent["customers"] 
                       name="password"
                       type="password"
                       required
-                      placeholder={mode === "signup" ? "Пароль (минимум 8 символов)" : "Пароль"}
+                      // Mirrors the route's minimum, so the browser catches it first.
+                      minLength={mode === "signup" ? 8 : undefined}
+                      placeholder={mode === "signup" ? ui.passwordHint : ui.password}
                       autoComplete={mode === "signup" ? "new-password" : "current-password"}
                       className={inputClass}
                     />
                     {mode === "signup" ? (
-                      <input name="phone" type="tel" placeholder="Телефон (необязательно)" autoComplete="tel" className={inputClass} />
+                      <input name="phone" type="tel" placeholder={ui.phone} autoComplete="tel" className={inputClass} />
                     ) : null}
                     {error ? <p className="font-mono text-[11px] text-red-400">{error}</p> : null}
                     <Button type="submit" size="lg" className="w-full" disabled={busy}>
-                      {busy ? "…" : mode === "login" ? "Войти" : "Создать аккаунт"}
+                      {busy ? "…" : mode === "login" ? ui.submitLogin : ui.submitSignup}
                     </Button>
                   </form>
                 </>

@@ -4,13 +4,22 @@ import { Panel, PanelBar } from "@/components/ui/card";
 import { Reveal } from "@/components/motion/reveal";
 import { CalEmbed } from "@/components/cal-embed";
 import { LeadForm } from "@/components/lead-form";
-import type { Site } from "@/content/site";
+import type { Site, Ui } from "@/content/types";
+import type { Locale } from "@/lib/lang";
 
 // Block 6 — the conversion zone. Two columns: book a slot straight in the
 // embedded calendar, or describe the task in the form. Whichever the visitor
 // prefers, the lead lands in the same automation.
 
-export function Contact({ content }: { content: Site["contact"] }) {
+export function Contact({
+  content,
+  messages,
+  locale,
+}: {
+  content: Site["contact"];
+  messages: Ui["form"];
+  locale: Locale;
+}) {
   return (
     <Section id="contact" className="border-t border-border">
       <Container>
@@ -56,7 +65,7 @@ export function Contact({ content }: { content: Site["contact"] }) {
                 </p>
 
                 <div className="mt-6 flex-1">
-                  <LeadForm content={content.form} />
+                  <LeadForm content={content.form} messages={messages} locale={locale} />
                 </div>
 
                 <ul className="mt-7 divide-y divide-border border-t border-border">

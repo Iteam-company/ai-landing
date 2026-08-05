@@ -3,11 +3,19 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { getUi } from "@/content";
+import { DEFAULT_LOCALE, INTL_LOCALE } from "@/lib/lang";
 
 // Admin dashboard for the backend features: leads from the conversion-zone form,
 // pending bookings (confirm/cancel) and the customer roster. Client component;
 // guarded by the admin session cookie via /api/admin/login. Pruned from static
 // (no-backend) clients by the CLI.
+//
+// This is the agency's own panel, not part of the localized site, so it always
+// renders in the build's default locale.
+
+const t = getUi(DEFAULT_LOCALE).admin;
+const dateFormat = INTL_LOCALE[DEFAULT_LOCALE];
 
 interface Booking {
   id: string;
@@ -52,7 +60,7 @@ export default function AdminPage() {
   }, []);
 
   if (authed === null) {
-    return <Centered>Загрузка…</Centered>;
+    return <Centered>{t.loading}</Centered>;
   }
   return authed ? <Dashboard onSignOut={() => setAuthed(false)} /> : <Login onSuccess={() => setAuthed(true)} />;
 }
@@ -73,7 +81,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     });
     setBusy(false);
     if (res.ok) onSuccess();
-    else setError("Неверные данные.");
+    else setError(t.badCredentials);
   }
 
   return (
@@ -82,12 +90,12 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
         onSubmit={submit}
         className="w-full max-w-sm space-y-4 rounded-[var(--radius-card)] bg-bg-card p-8 shadow-node"
       >
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-fg">Админка</h1>
-        <input name="user" placeholder="Логин (email)" required className={inputClass} autoComplete="username" />
-        <input name="pass" type="password" placeholder="Пароль" required className={inputClass} autoComplete="current-password" />
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-fg">{t.title}</h1>
+        <input name="user" placeholder={t.user} required className={inputClass} autoComplete="username" />
+        <input name="pass" type="password" placeholder={t.pass} required className={inputClass} autoComplete="current-password" />
         {error ? <p className="font-mono text-[11px] text-red-400">{error}</p> : null}
         <Button type="submit" size="lg" className="w-full" disabled={busy}>
-          {busy ? "…" : "Войти"}
+          {busy ? "…" : t.signIn}
         </Button>
       </form>
     </Centered>
@@ -149,28 +157,28 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-16 sm:px-8">
       <div className="mb-12 flex items-center justify-between">
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-fg">Панель</h1>
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-fg">{t.dashboard}</h1>
         <Button variant="secondary" onClick={signOut}>
-          Выйти
+          {t.signOut}
         </Button>
       </div>
 
-      <TableHeading>заявки с сайта</TableHeading>
+      <TableHeading>{t.leads.heading}</TableHeading>
       <TableFrame className="mb-14">
         <table className="w-full text-left text-sm">
-          <Head cells={["Когда", "Имя", "Контакт", "Задача", "Источник"]} />
+          <Head cells={t.leads.cols} />
           <tbody>
             {leads.length === 0 ? (
-              <Empty span={5}>Заявок пока нет.</Empty>
+              <Empty span={5}>{t.leads.empty}</Empty>
             ) : (
               leads.map((l) => (
                 <tr key={l.id} className="border-b border-border/60 last:border-0">
                   <td className="p-3 font-mono text-[11px] text-fg-muted">
-                    {new Date(l.createdAt).toLocaleString("ru-RU")}
+                    {new Date(l.createdAt).toLocaleString(dateFormat)}
                   </td>
                   <td className="p-3 text-fg">{l.name}</td>
                   <td className="p-3 text-fg-muted">{l.contact}</td>
-                  <td className="max-w-[16rem] truncate p-3 text-fg-muted">{l.task ?? "—"}</td>
+                  <td className="max-w-[16rem] truncate p-3 text-fg-muted">{l.task ?? t.empty}</td>
                   <td className="p-3 font-mono text-[11px] text-fg-muted">{l.source}</td>
                 </tr>
               ))
@@ -179,13 +187,13 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         </table>
       </TableFrame>
 
-      <TableHeading>бронирования</TableHeading>
+      <TableHeading>{t.bookings.heading}</TableHeading>
       <TableFrame className="mb-14">
         <table className="w-full text-left text-sm">
-          <Head cells={["Когда", "Кто", "Контакт", "Комментарий", "Статус", ""]} />
+          <Head cells={t.bookings.cols} />
           <tbody>
             {bookings.length === 0 ? (
-              <Empty span={6}>Бронирований пока нет.</Empty>
+              <Empty span={6}>{t.bookings.empty}</Empty>
             ) : (
               bookings.map((b) => (
                 <tr key={b.id} className="border-b border-border/60 last:border-0">
@@ -207,7 +215,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                         onClick={() => setStatus(b.id, "confirmed")}
                         className="mr-3 font-mono text-[11px] text-accent hover:underline"
                       >
-                        подтвердить
+                        {t.bookings.confirm}
                       </button>
                     ) : null}
                     {b.status !== "cancelled" ? (
@@ -215,7 +223,7 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
                         onClick={() => setStatus(b.id, "cancelled")}
                         className="font-mono text-[11px] text-fg-muted hover:text-fg"
                       >
-                        отменить
+                        {t.bookings.cancel}
                       </button>
                     ) : null}
                   </td>
@@ -226,21 +234,21 @@ function Dashboard({ onSignOut }: { onSignOut: () => void }) {
         </table>
       </TableFrame>
 
-      <TableHeading>клиенты</TableHeading>
+      <TableHeading>{t.customers.heading}</TableHeading>
       <TableFrame>
         <table className="w-full text-left text-sm">
-          <Head cells={["Email", "Телефон", "Бонусы", "Последний вход"]} />
+          <Head cells={t.customers.cols} />
           <tbody>
             {customers.length === 0 ? (
-              <Empty span={4}>Клиентов пока нет.</Empty>
+              <Empty span={4}>{t.customers.empty}</Empty>
             ) : (
               customers.map((c) => (
                 <tr key={c.email} className="border-b border-border/60 last:border-0">
                   <td className="p-3 text-fg">{c.email}</td>
-                  <td className="p-3 text-fg-muted">{c.phone ?? "—"}</td>
+                  <td className="p-3 text-fg-muted">{c.phone ?? t.empty}</td>
                   <td className="p-3 text-accent">{c.bonuses} pts</td>
                   <td className="p-3 font-mono text-[11px] text-fg-muted">
-                    {new Date(c.lastVisited).toLocaleString("ru-RU")}
+                    {new Date(c.lastVisited).toLocaleString(dateFormat)}
                   </td>
                 </tr>
               ))
@@ -294,7 +302,7 @@ function Empty({ span, children }: { span: number; children: React.ReactNode }) 
 }
 
 function StatusBadge({ status }: { status: Booking["status"] }) {
-  const label = { pending: "ожидает", confirmed: "подтверждено", cancelled: "отменено" }[status];
+  const label = t.bookings.status[status];
   return (
     <span
       className={cn(

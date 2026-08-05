@@ -13,6 +13,7 @@
 // shown next to it, instead of posting into the void.
 
 import { HAS_BACKEND } from "@/lib/features";
+import type { Locale } from "@/lib/lang";
 
 export interface LeadPayload {
   name: string;
@@ -20,6 +21,14 @@ export interface LeadPayload {
   task?: string;
   /** Where on the page the lead came from, useful for n8n routing. */
   source: string;
+  /** Language the visitor filled the form in — reply and route accordingly. */
+  locale: Locale;
+}
+
+/** Localized failure copy, from `content/ui.ts` → `form`. */
+export interface LeadMessages {
+  failed: string;
+  notConnected: string;
 }
 
 const WEBHOOK = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL?.trim();
@@ -32,9 +41,12 @@ export function leadEndpoint(): string | null {
 }
 
 /** Posts a lead; throws with a readable message when the endpoint rejects it. */
-export async function submitLead(payload: LeadPayload): Promise<void> {
+export async function submitLead(
+  payload: LeadPayload,
+  messages: LeadMessages,
+): Promise<void> {
   const endpoint = leadEndpoint();
-  if (!endpoint) throw new Error("Форма не подключена. Напишите нам напрямую.");
+  if (!endpoint) throw new Error(messages.notConnected);
 
   const res = await fetch(endpoint, {
     method: "POST",
@@ -42,8 +54,7 @@ export async function submitLead(payload: LeadPayload): Promise<void> {
     body: JSON.stringify({ ...payload, submittedAt: new Date().toISOString() }),
   });
 
-  if (!res.ok) {
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(data.error || "Не удалось отправить заявку. Попробуйте ещё раз.");
-  }
+  // The endpoint's own error copy is English (or, with n8n, arbitrary), so the
+  // caller's localized message is what the visitor sees.
+  if (!res.ok) throw new Error(messages.failed);
 }

@@ -5,14 +5,18 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import type { Site } from "@/content/site";
+import { LangSwitcher } from "@/components/lang-switcher";
+import type { Site, Ui } from "@/content/types";
+import type { Locale } from "@/lib/lang";
 
 interface HeaderProps {
   nav: Site["nav"];
   brand: Site["brand"];
+  locale: Locale;
+  a11y: Ui["a11y"];
 }
 
-export function Header({ nav, brand }: HeaderProps) {
+export function Header({ nav, brand, locale, a11y }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [open, setOpen] = React.useState(false);
@@ -66,6 +70,7 @@ export function Header({ nav, brand }: HeaderProps) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <LangSwitcher locale={locale} label={a11y.language} className="hidden sm:flex" />
           <Button asChild size="sm" className="hidden sm:inline-flex">
             <a href={nav.cta.href}>{nav.cta.label}</a>
           </Button>
@@ -73,7 +78,7 @@ export function Header({ nav, brand }: HeaderProps) {
             type="button"
             onClick={() => setOpen((v) => !v)}
             className="grid h-10 w-10 place-items-center rounded-[var(--radius-input)] border border-border text-fg md:hidden"
-            aria-label="Открыть меню"
+            aria-label={a11y.menu}
             aria-expanded={open}
           >
             {open ? <X size={17} /> : <Menu size={17} />}
@@ -115,12 +120,18 @@ export function Header({ nav, brand }: HeaderProps) {
                   </li>
                 ))}
               </ul>
-              <div className="mt-2 border-t border-border px-1 pt-2">
+              <div className="mt-2 space-y-3 border-t border-border px-1 pt-2">
                 <Button asChild className="w-full">
                   <a href={nav.cta.href} onClick={() => setOpen(false)}>
                     {nav.cta.label}
                   </a>
                 </Button>
+                <LangSwitcher
+                  locale={locale}
+                  label={a11y.language}
+                  className="justify-center sm:hidden"
+                  onNavigate={() => setOpen(false)}
+                />
               </div>
             </div>
           </motion.div>

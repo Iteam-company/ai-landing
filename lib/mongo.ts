@@ -1,5 +1,6 @@
 import "server-only";
 import { MongoClient, type Db, type Collection } from "mongodb";
+import type { Locale } from "@/lib/lang";
 
 // Server-only MongoDB access for the backend features (Business Calendar,
 // Customers) and this template's lead intake. One free database per client — the
@@ -18,6 +19,8 @@ export interface BookingDoc {
   date: string; // ISO date, e.g. "2026-06-10"
   time: string; // "14:30"
   status: "pending" | "confirmed" | "cancelled";
+  /** Language the visitor booked in — used for the confirmation email. */
+  locale?: Locale;
   createdAt: string;
 }
 
@@ -40,6 +43,8 @@ export interface LeadDoc {
   task?: string;
   /** Which block the lead came from, e.g. "contact-form". */
   source: string;
+  /** Language the visitor filled the form in — reply and route accordingly. */
+  locale?: Locale;
   createdAt: string;
 }
 

@@ -3,9 +3,10 @@
 import * as React from "react";
 import { Send, CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { leadEndpoint, submitLead } from "@/lib/leads";
+import { leadEndpoint, submitLead, type LeadMessages } from "@/lib/leads";
 import { cn } from "@/lib/utils";
-import type { Site } from "@/content/site";
+import type { Site } from "@/content/types";
+import type { Locale } from "@/lib/lang";
 
 // The conversion zone's text form. Posts through lib/leads.ts — straight to the
 // n8n webhook in a static build, or to /api/leads when the client has a backend.
@@ -15,7 +16,15 @@ import type { Site } from "@/content/site";
 const fieldClass =
   "w-full rounded-[var(--radius-input)] border border-border bg-bg px-4 py-3.5 text-[15px] text-fg placeholder:text-fg-muted/60 outline-none transition-colors focus:border-accent/60";
 
-export function LeadForm({ content }: { content: Site["contact"]["form"] }) {
+export function LeadForm({
+  content,
+  messages,
+  locale,
+}: {
+  content: Site["contact"]["form"];
+  messages: LeadMessages;
+  locale: Locale;
+}) {
   const endpoint = leadEndpoint();
   const [status, setStatus] = React.useState<"idle" | "sending" | "done" | "error">("idle");
   const [error, setError] = React.useState("");
@@ -26,16 +35,20 @@ export function LeadForm({ content }: { content: Site["contact"]["form"] }) {
     setStatus("sending");
     setError("");
     try {
-      await submitLead({
-        name: String(form.get("name") ?? ""),
-        contact: String(form.get("contact") ?? ""),
-        task: String(form.get("task") ?? "") || undefined,
-        source: "contact-form",
-      });
+      await submitLead(
+        {
+          name: String(form.get("name") ?? ""),
+          contact: String(form.get("contact") ?? ""),
+          task: String(form.get("task") ?? "") || undefined,
+          source: "contact-form",
+          locale,
+        },
+        messages,
+      );
       setStatus("done");
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Не удалось отправить заявку.");
+      setError(err instanceof Error ? err.message : messages.failed);
     }
   }
 

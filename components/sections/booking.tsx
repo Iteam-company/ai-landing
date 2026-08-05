@@ -6,7 +6,8 @@ import { Panel, PanelBar } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
-import type { SiteContent } from "@/content/site";
+import type { SiteContent, Ui } from "@/content/types";
+import { INTL_LOCALE, type Locale } from "@/lib/lang";
 
 // Business Calendar — a self-hosted slot picker. Feature: "calendar".
 // Posts to the server route POST /api/bookings (present only in backend builds).
@@ -16,7 +17,7 @@ import type { SiteContent } from "@/content/site";
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
 /** The next `count` week-days as { value: ISO date, label } options. */
-function upcomingDays(count: number): { value: string; label: string }[] {
+function upcomingDays(count: number, locale: Locale): { value: string; label: string }[] {
   const out: { value: string; label: string }[] = [];
   const d = new Date();
   d.setHours(0, 0, 0, 0);
@@ -26,7 +27,11 @@ function upcomingDays(count: number): { value: string; label: string }[] {
     if (day === 0 || day === 6) continue; // skip weekends
     out.push({
       value: d.toISOString().slice(0, 10),
-      label: d.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" }),
+      label: d.toLocaleDateString(INTL_LOCALE[locale], {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }),
     });
   }
   return out;
@@ -41,11 +46,22 @@ function useHydrated(): boolean {
   );
 }
 
-export function Booking({ content }: { content: SiteContent["booking"] }) {
+export function Booking({
+  content,
+  ui,
+  locale,
+}: {
+  content: SiteContent["booking"];
+  ui: Ui["booking"];
+  locale: Locale;
+}) {
   // Days are computed only on the client so build-time and view-time dates can't
   // mismatch on hydration (the server renders an empty grid, then it fills in).
   const hydrated = useHydrated();
-  const days = React.useMemo(() => (hydrated ? upcomingDays(8) : []), [hydrated]);
+  const days = React.useMemo(
+    () => (hydrated ? upcomingDays(8, locale) : []),
+    [hydrated, locale],
+  );
   const [picked, setPicked] = React.useState("");
   const date = picked || days[0]?.value || "";
   const [time, setTime] = React.useState(TIME_SLOTS[0]);
@@ -68,16 +84,16 @@ export function Booking({ content }: { content: SiteContent["booking"] }) {
           note: form.get("note"),
           date,
           time,
+          locale,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Что-то пошло не так.");
-      }
+      // The route answers in English (it is developer-facing), so the block shows
+      // its own localized copy instead of the response body.
+      if (!res.ok) throw new Error(ui.failed);
       setStatus("done");
     } catch (err) {
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Что-то пошло не так.");
+      setError(err instanceof Error ? err.message : ui.failed);
     }
   }
 
@@ -103,7 +119,7 @@ export function Booking({ content }: { content: SiteContent["booking"] }) {
               <form onSubmit={onSubmit} className="grid gap-8 p-6 sm:p-8 lg:grid-cols-2 lg:gap-10">
                 {/* Left: date + time pickers */}
                 <div className="space-y-7">
-                  <Field label="Дата">
+                  <Field label={ui.date}>
                     <div className="flex flex-wrap gap-2">
                       {days.map((d) => (
                         <Chip key={d.value} active={d.value === date} onClick={() => setPicked(d.value)}>
@@ -112,7 +128,7 @@ export function Booking({ content }: { content: SiteContent["booking"] }) {
                       ))}
                     </div>
                   </Field>
-                  <Field label="Время">
+                  <Field label={ui.time}>
                     <div className="flex flex-wrap gap-2">
                       {TIME_SLOTS.map((t) => (
                         <Chip key={t} active={t === time} onClick={() => setTime(t)}>
@@ -125,12 +141,12 @@ export function Booking({ content }: { content: SiteContent["booking"] }) {
 
                 {/* Right: contact fields */}
                 <div className="space-y-3.5">
-                  <input name="name" placeholder="Имя" required autoComplete="name" className={inputClass} />
-                  <input name="email" type="email" placeholder="Email" required autoComplete="email" className={inputClass} />
-                  <input name="phone" type="tel" placeholder="Телефон (необязательно)" autoComplete="tel" className={inputClass} />
+                  <input name="name" placeholder={ui.name} required autoComplete="name" className={inputClass} />
+                  <input name="email" type="email" placeholder={ui.email} required autoComplete="email" className={inputClass} />
+                  <input name="phone" type="tel" placeholder={ui.phone} autoComplete="tel" className={inputClass} />
                   <textarea
                     name="note"
-                    placeholder="Что обсудить на созвоне? (необязательно)"
+                    placeholder={ui.note}
                     rows={3}
                     className={cn(inputClass, "resize-y")}
                   />
@@ -138,7 +154,7 @@ export function Booking({ content }: { content: SiteContent["booking"] }) {
                     <p className="font-mono text-[11px] text-red-400">{error}</p>
                   ) : null}
                   <Button type="submit" size="lg" disabled={status === "sending"} className="w-full">
-                    {status === "sending" ? "Отправляем…" : content.cta}
+                    {status === "sending" ? ui.sending : content.cta}
                   </Button>
                 </div>
               </form>

@@ -29,7 +29,7 @@ export function Section({
 
 /**
  * Mono section marker — an accent square followed by an uppercase label
- * ("01 · боли бизнеса"). The recurring wayfinding element of the template.
+ * ("01 · business pains"). The recurring wayfinding element of the template.
  */
 export function Eyebrow({
   className,

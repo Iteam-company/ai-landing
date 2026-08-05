@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Panel, PanelBar } from "@/components/ui/card";
 import { FlowDiagram } from "@/components/flow-diagram";
 import { CallModal } from "@/components/call-modal";
-import type { Site } from "@/content/site";
+import type { Site, Ui } from "@/content/types";
 
 interface HeroProps {
   content: Site["hero"];
   calendar: Site["contact"]["calendar"];
+  a11y: Ui["a11y"];
 }
 
-export function Hero({ content, calendar }: HeroProps) {
+export function Hero({ content, calendar, a11y }: HeroProps) {
   const reduce = useReducedMotion();
 
   // One orchestrated, staggered page-load reveal.
@@ -69,7 +70,11 @@ export function Hero({ content, calendar }: HeroProps) {
             </motion.p>
 
             <motion.div variants={item} className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <CallModal label={content.primaryCta.label} calendar={calendar} />
+              <CallModal
+                label={content.primaryCta.label}
+                calendar={calendar}
+                closeLabel={a11y.close}
+              />
               <Button asChild size="lg" variant="secondary">
                 <a href={content.secondaryCta.href}>
                   {content.secondaryCta.label}
@@ -95,7 +100,7 @@ export function Hero({ content, calendar }: HeroProps) {
             </motion.dl>
           </div>
 
-          {/* The n8n-style canvas: Заявка ➔ AI-анализ ➔ CRM. */}
+          {/* The n8n-style canvas: lead ➔ AI analysis ➔ CRM. */}
           <motion.div variants={item}>
             <Panel className="overflow-hidden">
               <PanelBar label={content.flow.label} live>
@@ -104,7 +109,11 @@ export function Hero({ content, calendar }: HeroProps) {
                 </span>
               </PanelBar>
               <div className="rails-grid relative p-5 sm:p-7">
-                <FlowDiagram nodes={content.flow.nodes} className="mx-auto max-w-sm" />
+                <FlowDiagram
+                  nodes={content.flow.nodes}
+                  label={a11y.diagram}
+                  className="mx-auto max-w-sm"
+                />
               </div>
               <div className="border-t border-border px-5 py-3">
                 <p className="font-mono text-[10px] uppercase leading-relaxed text-fg-muted">

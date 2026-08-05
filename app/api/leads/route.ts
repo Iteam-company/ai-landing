@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/auth";
 import { sendMail } from "@/lib/mailer";
 import { leadAdminEmail } from "@/lib/emails";
 import { siteMeta } from "@/lib/site-meta";
+import { requestLocale } from "@/lib/lang";
 
 export const dynamic = "force-dynamic";
 
@@ -42,14 +43,18 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Некорректное тело запроса." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
+
+  // Tagged with the language the form was filled in, so the stored lead and the
+  // n8n forward carry it. Error copy stays English — the form shows its own.
+  const locale = requestLocale(body.locale);
 
   const name = String(body.name ?? "").trim();
   const contact = String(body.contact ?? "").trim();
 
   if (!name || !contact) {
-    return NextResponse.json({ error: "Укажите имя и контакт." }, { status: 400 });
+    return NextResponse.json({ error: "name and contact are required." }, { status: 400 });
   }
 
   const doc: LeadDoc = {
@@ -58,6 +63,7 @@ export async function POST(request: Request) {
     contact,
     task: body.task ? String(body.task).trim() : undefined,
     source: body.source ? String(body.source).trim() : "contact-form",
+    locale,
     createdAt: new Date().toISOString(),
   };
 

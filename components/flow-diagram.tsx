@@ -3,10 +3,10 @@
 import * as React from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
-import type { FlowNode } from "@/content/site";
+import type { FlowNode } from "@/content/types";
 
 // The hero's signature element: a miniature n8n-style canvas. Three nodes on a
-// staggered spine — Заявка ➔ AI-анализ ➔ CRM — wired with orthogonal connectors
+// staggered spine — lead ➔ AI analysis ➔ CRM — wired with orthogonal connectors
 // that carry an animated signal. Pure SVG on a fixed viewBox so it scales to any
 // column width; hovering (or focusing) a node lights it up.
 //
@@ -39,9 +39,12 @@ const WIRES = [
 
 export function FlowDiagram({
   nodes,
+  label,
   className,
 }: {
   nodes: FlowNode[];
+  /** Localized prefix of the SVG's description, e.g. "Automation flow". */
+  label: string;
   className?: string;
 }) {
   const reduce = useReducedMotion();
@@ -51,7 +54,7 @@ export function FlowDiagram({
     <svg
       viewBox="0 0 380 372"
       role="img"
-      aria-label={`Схема автоматизации: ${nodes.map((n) => n.label).join(" → ")}`}
+      aria-label={`${label}: ${nodes.map((n) => n.label).join(" → ")}`}
       className={cn("h-auto w-full select-none", className)}
     >
       {WIRES.map((wire, i) => (
