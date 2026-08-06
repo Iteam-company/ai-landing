@@ -9,11 +9,6 @@ import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 import type { Site } from "@/content/types";
 
-// Block 4 — architecture demo. Instead of a canned GIF this is a live pipeline:
-// the signal walks inbound lead ➔ AI analysis ➔ CRM deal ➔ Telegram alert on a
-// loop, lighting each stage as it arrives. Clicking a stage takes
-// manual control; reduced-motion visitors get the whole thing static.
-
 const STEP_MS = 2800;
 
 export function Showcase({ content }: { content: Site["showcase"] }) {

@@ -8,16 +8,6 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { CalEmbed } from "@/components/cal-embed";
 import type { Site } from "@/content/types";
 
-// The hero's "book a call" button — opens the scheduling widget in an overlay so a
-// visitor can book without leaving the hero. The same Cal.com embed is also
-// rendered inline in the conversion zone (#contact) for people who scroll.
-//
-// The overlay is portalled to <body>: its callers live inside sections that clip
-// (`overflow-hidden`) and, worse, animate `filter: blur(...)` — a non-none filter
-// turns that ancestor into the containing block for `position: fixed`, so an
-// in-tree overlay would be trapped inside the button row instead of covering the
-// viewport.
-
 export function CallModal({
   label,
   calendar,
@@ -28,19 +18,16 @@ export function CallModal({
 }: {
   label: string;
   calendar: Site["contact"]["calendar"];
-  /** aria-label of the close button. */
   closeLabel: string;
   variant?: ButtonProps["variant"];
   size?: ButtonProps["size"];
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  // There is no document during the static export's prerender, so the portal can
-  // only be created after hydration.
   const [mounted, setMounted] = React.useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   React.useEffect(() => setMounted(true), []);
 
-  // Escape to close, and freeze the page behind the overlay while it is open.
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {

@@ -14,6 +14,10 @@ interface RevealProps extends React.HTMLAttributes<HTMLDivElement> {
   once?: boolean;
   amount?: number;
   as?: keyof React.JSX.IntrinsicElements;
+  /** Fires once when the element enters the viewport — lets a caller lazily
+   *  trigger its own one-shot effect (e.g. Solutions' stage animation) off
+   *  the same observer Reveal already sets up, instead of a second one. */
+  onViewportEnter?: (entry: IntersectionObserverEntry | null) => void;
 }
 
 const offsets: Record<Direction, { x: number; y: number }> = {

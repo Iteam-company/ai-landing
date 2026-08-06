@@ -8,11 +8,6 @@ import { cn } from "@/lib/utils";
 import type { Site } from "@/content/types";
 import type { Locale } from "@/lib/lang";
 
-// The conversion zone's text form. Posts through lib/leads.ts — straight to the
-// n8n webhook in a static build, or to /api/leads when the client has a backend.
-// With neither configured the submit is disabled and the copy points at the
-// contacts next to it, so nothing silently vanishes.
-
 const fieldClass =
   "w-full rounded-[var(--radius-input)] border border-border bg-bg px-4 py-3.5 text-[15px] text-fg placeholder:text-fg-muted/60 outline-none transition-colors focus:border-accent/60";
 

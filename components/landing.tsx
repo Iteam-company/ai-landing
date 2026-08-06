@@ -16,10 +16,6 @@ import { getContent } from "@/content";
 import { getUi } from "@/content";
 import type { Locale } from "@/lib/lang";
 
-// Composition root. Everything below is fed from the locale's content object, so
-// each prerendered locale ("/" and "/<locale>/") renders the same tree with its
-// own copy.
-
 export function Landing({ locale }: { locale: Locale }) {
   const site = getContent(locale);
   const ui = getUi(locale);
@@ -30,7 +26,7 @@ export function Landing({ locale }: { locale: Locale }) {
       <main className="grain relative">
         <Hero content={site.hero} calendar={site.contact.calendar} a11y={ui.a11y} />
         <Pains content={site.pains} ui={ui.pains} />
-        <Solutions content={site.solutions} />
+        <Solutions content={site.solutions} a11y={ui.a11y} />
         <Showcase content={site.showcase} />
         <About content={site.about} />
         {/* <Pricing content={site.pricing} recommendedLabel={ui.pricing.recommended} /> */}
