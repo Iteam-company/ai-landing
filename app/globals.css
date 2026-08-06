@@ -129,6 +129,14 @@
     -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
   }
 
+  /* Vertical fade for the hero's dot-field backdrop — solid near the top,
+     dissolving toward the bottom so it reads as atmosphere rather than a
+     hard-edged panel. */
+  .field-fade {
+    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+  }
+
   /* Featured comparison column. Hovering any of its cells energises the whole
      rail, so the table reads as one connected system rather than separate rows. */
   .comparison-table [data-featured],

@@ -63,7 +63,7 @@ export function CallModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-bg/85 p-4 backdrop-blur-md sm:p-8"
+          className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-bg/85 p-4 backdrop-blur-md sm:p-8"
           onClick={() => setOpen(false)}
         >
           <motion.div
@@ -75,7 +75,7 @@ export function CallModal({
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="my-auto w-full max-w-3xl rounded-[var(--radius-card)] bg-bg-card shadow-node"
+            className="my-auto w-full max-w-3xl rounded-(--radius-card) bg-bg-card shadow-node"
           >
             <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3.5">
               <span className="font-mono text-[10px] uppercase text-fg-muted">
@@ -85,7 +85,7 @@ export function CallModal({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={closeLabel}
-                className="grid h-8 w-8 place-items-center rounded-[var(--radius-input)] border border-border text-fg-muted transition-colors hover:border-accent/50 hover:text-fg"
+                className="grid h-8 w-8 place-items-center rounded-input border border-border text-fg-muted transition-colors hover:border-accent/50 hover:text-fg"
               >
                 <X size={15} />
               </button>
