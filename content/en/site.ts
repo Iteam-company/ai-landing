@@ -34,7 +34,7 @@ export const site: Site = {
     subtitle:
       "We remove bottlenecks from sales, support and CRM—helping you cut operating costs by up to 40% while every new request gets an immediate response.",
     primaryCta: { label: "Book a call", href: "#contact" },
-    secondaryCta: { label: "Send us a message", href: "#lead-form" },
+    secondaryCta: { label: "Send us a message", href: "#booking" },
     stats: [
       { value: "40%", label: "operating costs saved" },
       { value: "7", label: "days to launch" },
@@ -276,37 +276,13 @@ export const site: Site = {
     title: "AI architecture by entrepreneurs, for entrepreneurs",
     subtitle:
       "We implement automation with a deep understanding of business economics, P&L and operational processes.",
-    items: [
-      {
-        label: "experience",
-        metric: "5+ years",
-        title: "In real business",
-        description:
-          "We have launched and scaled IT products, restaurant businesses and marketing agencies. We know firsthand where money is lost to routine work—and how difficult it is to protect margins as headcount grows.",
-        tags: ["IT products", "Restaurants", "Agencies"],
-      },
-      {
-        label: "economics",
-        metric: "ROI first",
-        title: "Focus on ROI and business economics",
-        description:
-          "We do not sell technology for technology’s sake or complex n8n stacks. We sell business outcomes: up to 40% lower OPEX, instant lead response and a system designed to pay for itself in the first weeks.",
-        tags: ["P&L", "OPEX", "Payback"],
-      },
-      {
-        label: "scale",
-        metric: "Lean scale",
-        title: "Systemic crisis management",
-        description:
-          "For us, automation is a tool for scaling without bloating payroll. We redesign process bottlenecks so the system can withstand multiple increases in workload.",
-        tags: ["Payroll", "Bottlenecks", "Capacity"],
-      },
-    ],
+    trust: ["ROI-first", "Lean scale", "IT products", "Restaurants", "Agencies"],
     founder: {
       caption: "founder · operator perspective",
       name: "Dmytro Nych",
       role: "Founder · Neuroflow.ai",
       monogram: "DN",
+      image: "/founder-dmytro-nych.jpg",
       imageAlt: "Portrait of Dmytro Nych, founder of Neuroflow.ai",
       quote:
         "The biggest mistake in AI adoption is entrusting it to people who have never run a business themselves.",
@@ -413,7 +389,7 @@ export const site: Site = {
     transition: "Questions about control or ongoing support?",
   },
   faq: {
-    eyebrow: "06 · frequently asked questions",
+    eyebrow: "05 · frequently asked questions",
     title: "What happens after the automation goes live?",
     subtitle: "Clear answers about control, reliability and ongoing support.",
     caption: "faq · operations",

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { Container, Section, SectionHeading } from "@/components/ui/container";
-import { Panel, Brackets } from "@/components/ui/card";
+import { Panel } from "@/components/ui/card";
 import { Reveal } from "@/components/motion/reveal";
 import { useSpotlight, SpotlightLayer } from "@/components/effects/spotlight-card";
 import { cn } from "@/lib/utils";
@@ -55,13 +55,9 @@ function PainCardItem({ card, index, ui }: { card: PainCard; index: number; ui: 
       )}
     >
       <SpotlightLayer style={spotlight.style} />
-      <Brackets className="opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100" />
 
-      {/* rail that grows along the leading edge on hover/focus */}
-      <span
-        aria-hidden
-        className="absolute left-0 top-6 h-8 w-0.5 rounded-full bg-accent transition-all duration-500 ease-out group-hover:h-[calc(100%-3rem)] group-focus-within:h-[calc(100%-3rem)]"
-      />
+      {/* fixed marker on the leading edge */}
+      <span aria-hidden className="absolute left-0 top-6 h-8 w-0.5 rounded-full bg-accent" />
 
       <div className="relative z-10 p-7 sm:p-8">
         <div className="flex items-center justify-between gap-4">

@@ -125,14 +125,6 @@ export interface FaqItem {
   answer: string;
 }
 
-export interface AboutItem {
-  label: string;
-  metric: string;
-  title: string;
-  description: string;
-  tags: string[];
-}
-
 export interface FounderProfile {
   /** Mono label in the founder panel's console bar. */
   caption: string;
@@ -220,7 +212,8 @@ export interface Site {
     eyebrow: string;
     title: string;
     subtitle: string;
-    items: AboutItem[];
+    /** Short trust markers shown under the founder panel, e.g. "ROI-first". */
+    trust: string[];
     founder: FounderProfile;
   };
   comparison: {

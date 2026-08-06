@@ -5,9 +5,9 @@ import { Solutions } from "@/components/sections/solutions";
 import { Showcase } from "@/components/sections/showcase";
 import { About } from "@/components/sections/about";
 // import { Pricing } from "@/components/sections/pricing";
-import { Comparison } from "@/components/sections/comparison";
+// import { Comparison } from "@/components/sections/comparison";
 import { Faq } from "@/components/sections/faq";
-import { Contact } from "@/components/sections/contact";
+// import { Contact } from "@/components/sections/contact";
 import { Footer } from "@/components/sections/footer";
 import { Booking } from "@/components/sections/booking";
 import { CustomerAccess } from "@/components/sections/customer-access";
@@ -22,7 +22,13 @@ export function Landing({ locale }: { locale: Locale }) {
 
   return (
     <>
-      <Header nav={site.nav} brand={site.brand} locale={locale} a11y={ui.a11y} />
+      <Header
+        nav={site.nav}
+        brand={site.brand}
+        locale={locale}
+        a11y={ui.a11y}
+        calendar={site.contact.calendar}
+      />
       <main className="grain relative">
         <Hero content={site.hero} calendar={site.contact.calendar} a11y={ui.a11y} />
         <Pains content={site.pains} ui={ui.pains} />
@@ -30,10 +36,10 @@ export function Landing({ locale }: { locale: Locale }) {
         <Showcase content={site.showcase} />
         <About content={site.about} />
         {/* <Pricing content={site.pricing} recommendedLabel={ui.pricing.recommended} /> */}
-        <Comparison
+        {/* <Comparison
           content={site.comparison}
           transitionHref="#faq"
-        />
+        /> */}
         <Faq
           content={site.faq}
           transitionHref={hasFeature("calendar") ? "#booking" : "#contact"}
@@ -45,7 +51,7 @@ export function Landing({ locale }: { locale: Locale }) {
         {hasFeature("customers") ? (
           <CustomerAccess content={site.customers} ui={ui.portal} locale={locale} />
         ) : null}
-        <Contact content={site.contact} messages={ui.form} locale={locale} />
+        {/* <Contact content={site.contact} messages={ui.form} locale={locale} /> */}
       </main>
       <Footer content={site.footer} brand={site.brand} />
     </>
