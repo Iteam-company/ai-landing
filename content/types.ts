@@ -297,6 +297,11 @@ export interface Ui {
   pricing: {
     recommended: string;
   };
+  pains: {
+    /** Toggle that reveals the automated outcome on touch/keyboard. */
+    seeResult: string;
+    hideResult: string;
+  };
   form: {
     failed: string;
     notConnected: string;

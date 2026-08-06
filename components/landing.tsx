@@ -29,7 +29,7 @@ export function Landing({ locale }: { locale: Locale }) {
       <Header nav={site.nav} brand={site.brand} locale={locale} a11y={ui.a11y} />
       <main className="grain relative">
         <Hero content={site.hero} calendar={site.contact.calendar} a11y={ui.a11y} />
-        <Pains content={site.pains} />
+        <Pains content={site.pains} ui={ui.pains} />
         <Solutions content={site.solutions} />
         <Showcase content={site.showcase} />
         <About content={site.about} />
