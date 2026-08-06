@@ -58,12 +58,12 @@ export function Solutions({
 
         <Reveal delay={0.12} onViewportEnter={() => setEntered(true)}>
           <AgentStage
+            key={`${activeId}-${playToken}`}
             item={activeItem}
             count={content.items.length}
             panelId={panelId}
             tabId={tabIdFor(activeId)}
             phase={phase}
-            stageKey={`${activeId}-${playToken}`}
           />
         </Reveal>
       </Container>

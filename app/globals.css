@@ -355,106 +355,12 @@
     -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   }
 
-  /* Solutions agent panel — ambient backdrop. The panel's own surface is
-     darkened here (a local tint, not a change to the shared `Panel`/
-     `bg-bg-card` token) so the two soft glows read as *local* light against
-     an almost-black field rather than an even warm wash. Each glow is its
-     own pseudo-element — a small, oversized-for-safe-drift layer with a
-     4-stop falloff (moderate → noticeably weaker → almost gone → fully
-     transparent) so the light stays compact instead of smearing across the
-     whole panel. The two drift on independent, opposingly-angled diagonals
-     at slightly different speeds, so they never read as visually locked
-     together. Deliberately not the stage-reveal's visual language (no glow
-     ring, no color change, no relation to `phase`) and not a
-     cursor-following spotlight — continuous and autonomous, mounted outside
-     the per-agent remount boundary (see agent-stage.tsx). Every tunable
-     value is a custom property on `.solutions-ambient` so brightness/size/
-     speed can be dialed after a visual pass without touching the gradients
-     or keyframes themselves. */
-  .solutions-ambient {
-    --ambient-duration: 20s;
-    --ambient-opacity-main: 13%;
-    --ambient-opacity-secondary: 5%;
-    --ambient-size-main: 30%;
-    --ambient-size-secondary: 22%;
-    --ambient-scale-to: 1.06;
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    overflow: hidden;
-    pointer-events: none;
-    /* Near the site's own dark background, just barely warmed — this is
-       what makes most of the panel read as almost black at rest. */
-    background-color: color-mix(in oklab, var(--color-accent) 3%, var(--color-bg));
-  }
-
-  .solutions-ambient::before,
-  .solutions-ambient::after {
-    content: "";
-    position: absolute;
-    inset: -14%;
-    will-change: transform;
-  }
-
-  .solutions-ambient::before {
-    background-image: radial-gradient(
-      ellipse var(--ambient-size-main) var(--ambient-size-main) at 30% 58%,
-      color-mix(in oklab, var(--color-accent) var(--ambient-opacity-main), transparent) 0%,
-      color-mix(in oklab, var(--color-accent) calc(var(--ambient-opacity-main) * 0.4), transparent) 26%,
-      color-mix(in oklab, var(--color-accent) calc(var(--ambient-opacity-main) * 0.1), transparent) 58%,
-      transparent 100%
-    );
-    animation: solutions-ambient-drift-main var(--ambient-duration) ease-in-out infinite alternate;
-  }
-
-  .solutions-ambient::after {
-    background-image: radial-gradient(
-      ellipse var(--ambient-size-secondary) var(--ambient-size-secondary) at 74% 26%,
-      color-mix(in oklab, var(--color-accent) var(--ambient-opacity-secondary), transparent) 0%,
-      color-mix(in oklab, var(--color-accent) calc(var(--ambient-opacity-secondary) * 0.3), transparent) 45%,
-      transparent 100%
-    );
-    animation: solutions-ambient-drift-secondary calc(var(--ambient-duration) * 1.15) ease-in-out infinite
-      alternate;
-  }
-
-  /* Lower-left ↔ upper-right. */
-  @keyframes solutions-ambient-drift-main {
-    from { transform: translate3d(-10%, 8%, 0) scale(1); }
-    to { transform: translate3d(12%, -8%, 0) scale(var(--ambient-scale-to)); }
-  }
-
-  /* The opposite diagonal, so the second glow visibly drifts apart from the
-     first instead of tagging along with it. */
-  @keyframes solutions-ambient-drift-secondary {
-    from { transform: translate3d(8%, -6%, 0) scale(1); }
-    to { transform: translate3d(-9%, 7%, 0) scale(1.04); }
-  }
-
-  /* Small screens: dimmer, slightly slower, and a single glow — the second
-     one reads as "busy" rather than atmospheric at that size. */
-  @media (max-width: 640px) {
-    .solutions-ambient {
-      --ambient-duration: 23s;
-      --ambient-opacity-main: 10%;
-      --ambient-size-main: 34%;
-    }
-    .solutions-ambient::after {
-      content: none;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .animate-wire,
     .animate-node,
     .animate-marquee,
     .animate-caret {
       animation: none;
-    }
-    .solutions-ambient::before,
-    .solutions-ambient::after {
-      animation: none;
-      transform: none;
     }
   }
 }
