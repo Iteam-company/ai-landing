@@ -129,6 +129,14 @@
     -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 88%);
   }
 
+  /* Vertical fade for the hero's dot-field backdrop — solid near the top,
+     dissolving toward the bottom so it reads as atmosphere rather than a
+     hard-edged panel. */
+  .field-fade {
+    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+  }
+
   /* Featured comparison column. Hovering any of its cells energises the whole
      rail, so the table reads as one connected system rather than separate rows. */
   .comparison-table [data-featured],
@@ -249,6 +257,97 @@
   }
   .animate-caret {
     animation: caret-blink 1.1s step-end infinite;
+  }
+
+  /* Solutions agent-stage sequence — a one-shot reveal (no infinite loop).
+     Each stage owns three independently-timed layers: the node (fill +
+     glow), the label row (fade + slide), and the detail line (fade + slide,
+     or a typewriter reveal for the one "agent is composing" stage per
+     sequence). These keyframes only describe the *shape* of each
+     transition — the actual timing (interval, enter/settle/connector
+     durations) lives in agent-stage-flow.tsx as animation-delay/duration
+     set via inline style, so every number that controls pacing sits in one
+     place. AgentStageFlow only applies these classes once
+     useReducedMotion() is false AND the section has entered the viewport;
+     otherwise it renders the plain (non-animated) future/completed classes
+     directly, so none of this runs under prefers-reduced-motion. */
+  @keyframes stage-node-enter {
+    from {
+      background-color: transparent;
+      border-color: var(--color-border);
+      box-shadow: 0 0 0 0 transparent;
+    }
+    to {
+      background-color: var(--color-accent);
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 5px color-mix(in oklab, var(--color-accent) 20%, transparent);
+    }
+  }
+  .animate-stage-node-enter {
+    animation-name: stage-node-enter;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+  }
+
+  /* The active glow calms into the plain "completed" fill — timed to land
+     right as the next stage's node starts entering, so nothing pulses
+     indefinitely once the chain has moved on. */
+  @keyframes stage-node-settle {
+    from { box-shadow: 0 0 0 5px color-mix(in oklab, var(--color-accent) 20%, transparent); }
+    to { box-shadow: 0 0 0 0 transparent; }
+  }
+  .animate-stage-node-settle {
+    animation-name: stage-node-settle;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes stage-rail-in {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+  }
+  .animate-stage-rail {
+    animation-name: stage-rail-in;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+  }
+
+  /* Label row and detail line: fully hidden (not merely dimmed) until their
+     own delay fires, with a small upward slide. */
+  @keyframes stage-fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-stage-fade {
+    animation-name: stage-fade-in;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+  }
+
+  @keyframes stage-icon-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .animate-stage-icon {
+    animation-name: stage-icon-in;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+  }
+
+  /* Typewriter reveal for the one "agent is composing" line per sequence. */
+  @keyframes stage-type {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+  .animate-stage-type {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    vertical-align: bottom;
+    width: 0;
+    animation-name: stage-type;
+    animation-timing-function: steps(22, end);
+    animation-fill-mode: forwards;
   }
 
   .mask-fade-x {

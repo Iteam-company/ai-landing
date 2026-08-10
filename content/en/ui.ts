@@ -6,8 +6,10 @@ export const ui: Ui = {
     language: "Site language",
     close: "Close",
     diagram: "Automation flow",
+    agents: "AI agents",
   },
   pricing: { recommended: "recommended" },
+  pains: { seeResult: "See automated result", hideResult: "Hide result" },
   form: {
     failed: "Couldn't send the request. Please try again.",
     notConnected: "The form isn't connected. Please write to us directly.",

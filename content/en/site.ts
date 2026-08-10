@@ -34,7 +34,7 @@ export const site: Site = {
     subtitle:
       "We remove bottlenecks from sales, support and CRM—helping you cut operating costs by up to 40% while every new request gets an immediate response.",
     primaryCta: { label: "Book a call", href: "#contact" },
-    secondaryCta: { label: "Send us a message", href: "#lead-form" },
+    secondaryCta: { label: "Send us a message", href: "#booking" },
     stats: [
       { value: "40%", label: "operating costs saved" },
       { value: "7", label: "days to launch" },
@@ -121,69 +121,112 @@ export const site: Site = {
       "Not a website chatbot, but agents inside your processes: with access to your CRM, calendar and knowledge base.",
     items: [
       {
+        id: "lead-qualifier",
         index: "01",
         name: "AI Lead Qualifier",
+        icon: "radar",
         title: "More qualified calls—without manager involvement",
         description:
           "Responds in under a minute, asks the right questions and offers a meeting slot when the lead is ready.",
         demo: {
           caption: "Telegram · sample conversation",
-          ariaLabel: "Example of an AI qualifier booking a sales call",
-          steps: [
-            { label: "Lead", text: "We need to automate our sales process", tone: "input" },
-            { label: "AI qualifier", text: "Volume and timeline captured", tone: "agent" },
-            { label: "Calendar", text: "Qualified call booked · 14:30", tone: "result" },
+          ariaLabel: "AI qualifier reading an inbound lead, qualifying it and booking a call",
+          stages: [
+            { id: "lead-in", label: "Lead in", detail: "New message via Telegram", tone: "input" },
+            {
+              id: "reading",
+              label: "Reading message",
+              detail: "Parsing intent and urgency",
+              tone: "agent",
+              typing: true,
+            },
+            { id: "captured", label: "Need, budget & timeline", detail: "Requirements captured", tone: "agent" },
+            { id: "qualified", label: "Qualified", detail: "Scored as sales-ready", tone: "agent" },
+            { id: "slot", label: "Slot offered", detail: "Open time proposed", tone: "agent" },
+            {
+              id: "booked",
+              label: "Meeting booked · CRM updated",
+              detail: "Call confirmed · deal created",
+              tone: "result",
+            },
           ],
         },
         tags: ["Telegram / WhatsApp", "BANT scoring", "Calendar", "CRM"],
       },
       {
+        id: "crm-assistant",
         index: "02",
         name: "AI CRM Assistant",
+        icon: "bot",
         title: "Returns selling hours to every manager, every week",
         description:
           "Turns every sales call into a clean summary, updated CRM fields and a ready-to-run follow-up task.",
         demo: {
           caption: "CRM · post-call workflow",
-          ariaLabel: "Example of an AI assistant updating the CRM after a call",
-          steps: [
-            { label: "Zoom", text: "Discovery call ended · 26 min", tone: "input" },
-            { label: "AI assistant", text: "Needs, objections and next step extracted", tone: "agent" },
-            { label: "CRM", text: "Deal updated · follow-up created", tone: "result" },
+          ariaLabel: "AI assistant transcribing a sales call and updating the CRM",
+          stages: [
+            { id: "call-ended", label: "Call ended", detail: "Discovery call · 26 min", tone: "input" },
+            { id: "transcribing", label: "Transcribing", detail: "Converting audio to text", tone: "agent" },
+            {
+              id: "extracting",
+              label: "Extracting insights",
+              detail: "Needs, objections, next step",
+              tone: "agent",
+              typing: true,
+            },
+            { id: "crm-updated", label: "CRM updated", detail: "Deal fields filled in", tone: "agent" },
+            { id: "follow-up", label: "Follow-up created", detail: "Task scheduled for rep", tone: "agent" },
+            { id: "summary", label: "Summary ready", detail: "One-page recap sent", tone: "result" },
           ],
         },
         tags: ["Transcription", "Summaries", "CRM tasks", "PDF proposals"],
       },
       {
+        id: "knowledge-assistant",
         index: "03",
         name: "Knowledge Assistant",
+        icon: "library",
         title: "Answers routine questions in seconds—with sources",
         description:
           "Finds the answer across your playbooks, PDFs and workspace, then shows exactly where it came from.",
         demo: {
           caption: "Knowledge base · sample query",
-          ariaLabel: "Example of a knowledge assistant answering from company documents",
-          steps: [
-            { label: "Question", text: "What is our refund policy?", tone: "input" },
-            { label: "Knowledge agent", text: "Answer prepared from approved documents", tone: "agent" },
-            { label: "Sources", text: "Policy.pdf · section 4.2", tone: "result" },
+          ariaLabel: "Knowledge assistant searching company documents and answering with a source",
+          stages: [
+            { id: "question", label: "Question received", detail: "“What is our refund policy?”", tone: "input" },
+            { id: "searching", label: "Searching knowledge base", detail: "Scanning docs and playbooks", tone: "agent" },
+            { id: "source-found", label: "Source found", detail: "Policy.pdf · section 4.2", tone: "agent" },
+            {
+              id: "drafted",
+              label: "Answer drafted",
+              detail: "Response grounded in source",
+              tone: "agent",
+              typing: true,
+            },
+            { id: "source-attached", label: "Source attached", detail: "Link included in reply", tone: "agent" },
+            { id: "answer-sent", label: "Answer sent", detail: "Delivered with citation", tone: "result" },
           ],
         },
         tags: ["RAG", "Vector store", "Playbooks", "Source links"],
       },
       {
+        id: "workflow-automation",
         index: "04",
         name: "Workflow Automation",
+        icon: "workflow",
         title: "Moves data between your tools without manual work",
         description:
           "Connects forms, CRM, messengers and spreadsheets so every routine step happens in the right system.",
         demo: {
           caption: "Operations · sample workflow",
-          ariaLabel: "Example of an automated lead routing workflow",
-          steps: [
-            { label: "Website", text: "New enterprise request received", tone: "input" },
-            { label: "Workflow", text: "Lead enriched, scored and routed", tone: "agent" },
-            { label: "CRM + Slack", text: "Deal created · team notified", tone: "result" },
+          ariaLabel: "Automated workflow enriching, scoring and routing a new lead",
+          stages: [
+            { id: "submitted", label: "Form submitted", detail: "New enterprise request", tone: "input" },
+            { id: "enriched", label: "Data enriched", detail: "Company and contact details added", tone: "agent" },
+            { id: "scored", label: "Lead scored", detail: "Priority assigned", tone: "agent" },
+            { id: "record", label: "CRM record created", detail: "Deal added to pipeline", tone: "agent" },
+            { id: "notified", label: "Slack notified", detail: "Team alerted in #sales", tone: "agent" },
+            { id: "assigned", label: "Task assigned", detail: "Owner set · due today", tone: "result" },
           ],
         },
         tags: ["n8n", "Webhooks", "API", "Self-hosted"],
@@ -233,37 +276,13 @@ export const site: Site = {
     title: "AI architecture by entrepreneurs, for entrepreneurs",
     subtitle:
       "We implement automation with a deep understanding of business economics, P&L and operational processes.",
-    items: [
-      {
-        label: "experience",
-        metric: "5+ years",
-        title: "In real business",
-        description:
-          "We have launched and scaled IT products, restaurant businesses and marketing agencies. We know firsthand where money is lost to routine work—and how difficult it is to protect margins as headcount grows.",
-        tags: ["IT products", "Restaurants", "Agencies"],
-      },
-      {
-        label: "economics",
-        metric: "ROI first",
-        title: "Focus on ROI and business economics",
-        description:
-          "We do not sell technology for technology’s sake or complex n8n stacks. We sell business outcomes: up to 40% lower OPEX, instant lead response and a system designed to pay for itself in the first weeks.",
-        tags: ["P&L", "OPEX", "Payback"],
-      },
-      {
-        label: "scale",
-        metric: "Lean scale",
-        title: "Systemic crisis management",
-        description:
-          "For us, automation is a tool for scaling without bloating payroll. We redesign process bottlenecks so the system can withstand multiple increases in workload.",
-        tags: ["Payroll", "Bottlenecks", "Capacity"],
-      },
-    ],
+    trust: ["ROI-first", "Lean scale", "IT products", "Restaurants", "Agencies"],
     founder: {
       caption: "founder · operator perspective",
       name: "Dmytro Nych",
       role: "Founder · Neuroflow.ai",
       monogram: "DN",
+      image: "/founder-dmytro-nych.jpg",
       imageAlt: "Portrait of Dmytro Nych, founder of Neuroflow.ai",
       quote:
         "The biggest mistake in AI adoption is entrusting it to people who have never run a business themselves.",
@@ -370,7 +389,7 @@ export const site: Site = {
     transition: "Questions about control or ongoing support?",
   },
   faq: {
-    eyebrow: "06 · frequently asked questions",
+    eyebrow: "05 · frequently asked questions",
     title: "What happens after the automation goes live?",
     subtitle: "Clear answers about control, reliability and ongoing support.",
     caption: "faq · operations",

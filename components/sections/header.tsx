@@ -4,7 +4,7 @@ import * as React from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { CallModal } from "@/components/call-modal";
 import { LangSwitcher } from "@/components/lang-switcher";
 import type { Site, Ui } from "@/content/types";
 import type { Locale } from "@/lib/lang";
@@ -14,9 +14,10 @@ interface HeaderProps {
   brand: Site["brand"];
   locale: Locale;
   a11y: Ui["a11y"];
+  calendar: Site["contact"]["calendar"];
 }
 
-export function Header({ nav, brand, locale, a11y }: HeaderProps) {
+export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [open, setOpen] = React.useState(false);
@@ -71,9 +72,13 @@ export function Header({ nav, brand, locale, a11y }: HeaderProps) {
 
         <div className="flex items-center gap-2">
           <LangSwitcher locale={locale} label={a11y.language} className="hidden sm:flex" />
-          <Button asChild size="sm" className="hidden sm:inline-flex">
-            <a href={nav.cta.href}>{nav.cta.label}</a>
-          </Button>
+          <CallModal
+            label={nav.cta.label}
+            calendar={calendar}
+            closeLabel={a11y.close}
+            size="sm"
+            className="hidden sm:inline-flex"
+          />
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -121,11 +126,14 @@ export function Header({ nav, brand, locale, a11y }: HeaderProps) {
                 ))}
               </ul>
               <div className="mt-2 space-y-3 border-t border-border px-1 pt-2">
-                <Button asChild className="w-full">
-                  <a href={nav.cta.href} onClick={() => setOpen(false)}>
-                    {nav.cta.label}
-                  </a>
-                </Button>
+                <div onClick={() => setOpen(false)}>
+                  <CallModal
+                    label={nav.cta.label}
+                    calendar={calendar}
+                    closeLabel={a11y.close}
+                    className="w-full"
+                  />
+                </div>
                 <LangSwitcher
                   locale={locale}
                   label={a11y.language}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Panel, PanelBar } from "@/components/ui/card";
 import { FlowDiagram } from "@/components/flow-diagram";
 import { CallModal } from "@/components/call-modal";
+import { DotField } from "@/components/effects/dot-field";
 import type { Site, Ui } from "@/content/types";
 
 interface HeroProps {
@@ -35,9 +36,11 @@ export function Hero({ content, calendar, a11y }: HeroProps) {
 
   return (
     <section id="top" className="relative overflow-hidden pt-28 pb-16 sm:pt-32 lg:pt-40">
-      {/* Console backdrop: accent bloom over vertical rails. */}
+      {/* Console backdrop: accent bloom over a slow, sparse dot field. */}
       <div className="bloom pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[42rem]" />
-      <div className="rails rails-fade pointer-events-none absolute inset-0 -z-10" />
+      <div aria-hidden className="field-fade pointer-events-none absolute inset-0 -z-10">
+        <DotField className="relative h-full w-full" />
+      </div>
 
       <Container>
         <motion.div

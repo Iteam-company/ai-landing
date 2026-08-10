@@ -44,22 +44,40 @@ export interface PainCard {
   outcome: string;
 }
 
+/** Lucide icon key for a Solution — kept as a serializable string (not a
+ *  component) so the data stays CMS-friendly; components/sections/solutions
+ *  resolves it to the actual icon. */
+export type SolutionIcon = "radar" | "bot" | "library" | "workflow";
+
+/** One stage of an agent's live demo sequence, played back in order. */
+export interface SolutionStage {
+  id: string;
+  /** Short node title, e.g. "Reading message". 2–5 words. */
+  label: string;
+  /** One short line of example detail, e.g. "New message via Telegram". */
+  detail: string;
+  /** What kind of stage this is — drives the node/rail visual treatment. */
+  tone: "input" | "agent" | "result";
+  /** Plays a brief typing reveal on `detail` — use sparingly, at most once
+   *  per sequence, only where the agent is visibly composing a response. */
+  typing?: boolean;
+}
+
 export interface Solution {
+  /** Stable key — drives the agent switcher's selection state. */
+  id: string;
   index: string;
   /** Product/module name shown as a secondary label. */
   name: string;
+  icon: SolutionIcon;
   /** Outcome-led headline. */
   title: string;
   description: string;
-  /** Compact, code-native example of the workflow in action. */
+  /** The agent's live demo: a short, ordered sequence of stages. */
   demo: {
     caption: string;
     ariaLabel: string;
-    steps: {
-      label: string;
-      text: string;
-      tone: "input" | "agent" | "result";
-    }[];
+    stages: SolutionStage[];
   };
   /** Short mono tags — the services this agent touches. */
   tags: string[];
@@ -105,14 +123,6 @@ export interface ComparisonRow {
 export interface FaqItem {
   question: string;
   answer: string;
-}
-
-export interface AboutItem {
-  label: string;
-  metric: string;
-  title: string;
-  description: string;
-  tags: string[];
 }
 
 export interface FounderProfile {
@@ -202,7 +212,8 @@ export interface Site {
     eyebrow: string;
     title: string;
     subtitle: string;
-    items: AboutItem[];
+    /** Short trust markers shown under the founder panel, e.g. "ROI-first". */
+    trust: string[];
     founder: FounderProfile;
   };
   comparison: {
@@ -293,9 +304,16 @@ export interface Ui {
     language: string;
     close: string;
     diagram: string;
+    /** Tablist label for the solutions section's agent switcher. */
+    agents: string;
   };
   pricing: {
     recommended: string;
+  };
+  pains: {
+    /** Toggle that reveals the automated outcome on touch/keyboard. */
+    seeResult: string;
+    hideResult: string;
   };
   form: {
     failed: string;

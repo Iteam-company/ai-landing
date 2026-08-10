@@ -5,25 +5,15 @@ import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import type { FlowNode } from "@/content/types";
 
-// The hero's signature element: a miniature n8n-style canvas. Three nodes on a
-// staggered spine — lead ➔ AI analysis ➔ CRM — wired with orthogonal connectors
-// that carry an animated signal. Pure SVG on a fixed viewBox so it scales to any
-// column width; hovering (or focusing) a node lights it up.
-//
-// Motion is SMIL-free of CSS dependencies except the dash flow, and every
-// animated part is dropped when the visitor prefers reduced motion.
-
 const NODE_W = 210;
 const NODE_H = 68;
 
-/** Top-left corner of each node, in viewBox units. Index matches content order. */
 const POSITIONS = [
   { x: 20, y: 18 },
   { x: 120, y: 152 },
   { x: 40, y: 286 },
 ] as const;
 
-/** Elbow connectors between consecutive nodes, with their end ports. */
 const WIRES = [
   {
     d: "M125 86 V107 Q125 119 137 119 H213 Q225 119 225 131 V152",
@@ -43,7 +33,6 @@ export function FlowDiagram({
   className,
 }: {
   nodes: FlowNode[];
-  /** Localized prefix of the SVG's description, e.g. "Automation flow". */
   label: string;
   className?: string;
 }) {
@@ -59,14 +48,12 @@ export function FlowDiagram({
     >
       {WIRES.map((wire, i) => (
         <g key={i}>
-          {/* Static rail the signal runs along. */}
           <path
             d={wire.d}
             fill="none"
             className="stroke-fg-muted/25"
             strokeWidth={1.5}
           />
-          {/* Flowing dashes — the "running workflow" tell. */}
           <path
             d={wire.d}
             fill="none"
@@ -110,7 +97,6 @@ export function FlowDiagram({
               )}
               strokeWidth={on ? 1.6 : 1}
             />
-            {/* Accent rail on the leading edge. */}
             <rect
               x={x}
               y={y + 14}
@@ -151,7 +137,6 @@ export function FlowDiagram({
         );
       })}
 
-      {/* The signal itself — a packet travelling each wire in turn. */}
       {reduce
         ? null
         : WIRES.map((wire, i) => (
