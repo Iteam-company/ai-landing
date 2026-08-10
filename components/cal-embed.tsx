@@ -1,15 +1,5 @@
 import { cn } from "@/lib/utils";
 
-// Embedded scheduling widget for the conversion zone. Uses a plain <iframe>
-// rather than Cal.com's embed script so it works in a static export with no
-// third-party JS on the page.
-//
-//   NEXT_PUBLIC_CAL_LINK        e.g. "neuroflow/30min"  → https://cal.com/…
-//   NEXT_PUBLIC_CAL_EMBED_URL   any other provider (Calendly, Zcal, …); wins
-//                               over CAL_LINK when both are set.
-//
-// With neither set the block renders a placeholder instead of a dead frame.
-
 const EMBED_URL = process.env.NEXT_PUBLIC_CAL_EMBED_URL?.trim();
 const CAL_LINK = process.env.NEXT_PUBLIC_CAL_LINK?.trim();
 

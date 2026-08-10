@@ -8,16 +8,6 @@ import { Button, type ButtonProps } from "@/components/ui/button";
 import { CalEmbed } from "@/components/cal-embed";
 import type { Site } from "@/content/types";
 
-// The hero's "book a call" button — opens the scheduling widget in an overlay so a
-// visitor can book without leaving the hero. The same Cal.com embed is also
-// rendered inline in the conversion zone (#contact) for people who scroll.
-//
-// The overlay is portalled to <body>: its callers live inside sections that clip
-// (`overflow-hidden`) and, worse, animate `filter: blur(...)` — a non-none filter
-// turns that ancestor into the containing block for `position: fixed`, so an
-// in-tree overlay would be trapped inside the button row instead of covering the
-// viewport.
-
 export function CallModal({
   label,
   calendar,
@@ -28,19 +18,16 @@ export function CallModal({
 }: {
   label: string;
   calendar: Site["contact"]["calendar"];
-  /** aria-label of the close button. */
   closeLabel: string;
   variant?: ButtonProps["variant"];
   size?: ButtonProps["size"];
   className?: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  // There is no document during the static export's prerender, so the portal can
-  // only be created after hydration.
   const [mounted, setMounted] = React.useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   React.useEffect(() => setMounted(true), []);
 
-  // Escape to close, and freeze the page behind the overlay while it is open.
   React.useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -63,7 +50,7 @@ export function CallModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-bg/85 p-4 backdrop-blur-md sm:p-8"
+          className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto bg-bg/85 p-4 backdrop-blur-md sm:p-8"
           onClick={() => setOpen(false)}
         >
           <motion.div
@@ -75,7 +62,7 @@ export function CallModal({
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="my-auto w-full max-w-3xl rounded-[var(--radius-card)] bg-bg-card shadow-node"
+            className="my-auto w-full max-w-3xl rounded-(--radius-card) bg-bg-card shadow-node"
           >
             <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3.5">
               <span className="font-mono text-[10px] uppercase text-fg-muted">
@@ -85,7 +72,7 @@ export function CallModal({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={closeLabel}
-                className="grid h-8 w-8 place-items-center rounded-[var(--radius-input)] border border-border text-fg-muted transition-colors hover:border-accent/50 hover:text-fg"
+                className="grid h-8 w-8 place-items-center rounded-input border border-border text-fg-muted transition-colors hover:border-accent/50 hover:text-fg"
               >
                 <X size={15} />
               </button>
