@@ -5,7 +5,6 @@ export const ui: Ui = {
     menu: "Open menu",
     language: "Site language",
     close: "Close",
-    diagram: "Automation flow",
     agents: "AI agents",
   },
   pricing: { recommended: "recommended" },

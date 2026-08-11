@@ -1,6 +1,3 @@
-// English marketing copy. Mirrors content/ru/site.ts — keep both in sync
-// when editing copy.
-
 import type { Site } from "../types";
 
 export const site: Site = {
@@ -22,7 +19,6 @@ export const site: Site = {
       { label: "pains", href: "#pains" },
       { label: "solutions", href: "#solutions" },
       { label: "architecture", href: "#showcase" },
-      // { label: "pricing", href: "#pricing" },
       { label: "about us", href: "#about" },
       { label: "contact", href: "#booking" },
     ],
@@ -30,9 +26,6 @@ export const site: Site = {
   },
   hero: {
     eyebrow: "Cut costs · faster lead response · launch in 7 days",
-    title: "Save money and process every lead faster - in just 7 days",
-    subtitle:
-      "We remove bottlenecks from sales, support and CRM—helping you cut operating costs by up to 40% while every new request gets an immediate response.",
     primaryCta: { label: "Book a call", href: "#contact" },
     secondaryCta: { label: "Send us a message", href: "#booking" },
     stats: [
@@ -40,15 +33,142 @@ export const site: Site = {
       { value: "7", label: "days to launch" },
       { value: "24/7", label: "leads processed" },
     ],
-    flow: {
-      label: "lead-response.workflow",
-      nodes: [
-        { id: "lead", label: "Lead", meta: "webhook" },
-        { id: "ai", label: "AI analysis", meta: "gpt · BANT" },
-        { id: "crm", label: "CRM", meta: "deal + task" },
-      ],
-      status: "workflow active · average response time 40 sec",
-    },
+    scenarios: [
+      {
+        id: "lead-response",
+        title: "Turn every new lead into a conversation — in seconds",
+        subtitle:
+          "AI instantly qualifies incoming leads, prepares personalized replies and creates the next step in your CRM — even when your team is offline.",
+        flow: {
+          label: "lead-response.workflow",
+          workflow: {
+            kind: "lead",
+            input: {
+              eyebrow: "new lead",
+              name: "Sarah Miller",
+              quote: "We need an AI assistant for our sales team...",
+              source: "web form",
+            },
+            analysis: {
+              eyebrow: "ai analysis",
+              points: [
+                { label: "intent", value: "Sales automation" },
+                { label: "budget", value: "$5k–10k" },
+                { label: "timeline", value: "This month" },
+                { label: "priority", value: "High", emphasis: true },
+              ],
+            },
+            qualified: { eyebrow: "qualified", score: 92, scoreMax: 100 },
+            action: {
+              eyebrow: "action",
+              items: ["Reply ready", "CRM deal created", "Follow-up scheduled"],
+            },
+          },
+          status: "workflow active · response time < 1 min",
+        },
+      },
+      {
+        id: "email-automation",
+        title: "Put your business communication on autopilot",
+        subtitle:
+          "AI reads incoming emails, understands each request, prepares replies, routes conversations and makes sure nothing important gets lost.",
+        flow: {
+          label: "email-automation.workflow",
+          workflow: {
+            kind: "email",
+            input: {
+              eyebrow: "incoming email",
+              from: "alex@acme.com",
+              subject: "Invoice issue",
+              quote: "We were charged twice for...",
+            },
+            analysis: {
+              eyebrow: "ai router",
+              points: [
+                { label: "category", value: "Billing" },
+                { label: "sentiment", value: "Frustrated" },
+                { label: "urgency", value: "High", emphasis: true },
+              ],
+            },
+            context: {
+              eyebrow: "knowledge / context",
+              points: [
+                { label: "refund policy", value: "Found", emphasis: true },
+                { label: "invoice #10284", value: "Found", emphasis: true },
+                { label: "customer history", value: "Found", emphasis: true },
+              ],
+            },
+            action: {
+              eyebrow: "action",
+              items: ["Draft reply created", "Finance notified", "Follow-up task created"],
+            },
+          },
+          status: "inbox monitored · requests routed 24/7",
+        },
+      },
+      {
+        id: "crm-automation",
+        title: "Let your team sell. AI handles the CRM work.",
+        subtitle:
+          "Calls, messages and forms are automatically turned into structured CRM data, follow-ups and tasks — without manual updates.",
+        flow: {
+          label: "crm-automation.workflow",
+          workflow: {
+            kind: "crm",
+            input: { eyebrow: "call finished", duration: "18:42" },
+            analysis: {
+              eyebrow: "ai extraction",
+              points: [
+                { label: "company", value: "ACME" },
+                { label: "need", value: "Lead routing" },
+                { label: "budget", value: "$12,000" },
+                { label: "next step", value: "Product demo" },
+              ],
+            },
+            result: {
+              eyebrow: "crm update",
+              points: [
+                { label: "contact", value: "Updated", emphasis: true },
+                { label: "deal", value: "Created", emphasis: true },
+                { label: "task", value: "Created", emphasis: true },
+                { label: "follow-up", value: "Scheduled", emphasis: true },
+              ],
+            },
+          },
+          status: "crm synced · manual updates removed",
+        },
+      },
+      {
+        id: "knowledge-assistant",
+        title: "Give your team an AI that knows your business",
+        subtitle:
+          "Connect your documents, knowledge base and internal tools so employees can get accurate answers and perform routine actions through one assistant.",
+        flow: {
+          label: "knowledge-assistant.workflow",
+          workflow: {
+            kind: "knowledge",
+            input: {
+              eyebrow: "employee question",
+              quote: "What is our refund policy for enterprise customers?",
+            },
+            search: {
+              eyebrow: "searching knowledge",
+              points: [
+                { label: "refund policy v4", value: "Found", emphasis: true },
+                { label: "enterprise contract", value: "Found", emphasis: true },
+                { label: "sales playbook", value: "Found", emphasis: true },
+              ],
+            },
+            answer: {
+              eyebrow: "ai answer",
+              text: "Enterprise customers can request a full refund within 30 days of the contract start date, or a pro-rated refund after that.",
+              sources: ["Policy v4 · p.12", "Contract · §4.2"],
+            },
+          },
+          status: "knowledge connected · answers in seconds",
+        },
+      },
+    ],
     marquee: [
       "n8n",
       "OpenAI",
