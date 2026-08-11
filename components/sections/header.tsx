@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
@@ -48,9 +49,14 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 lg:px-10">
         <a href="#top" className="group flex items-center gap-3" aria-label={brand.name}>
-          <span className="grid h-9 w-9 place-items-center rounded-[var(--radius-input)] bg-accent font-display text-[13px] font-bold text-accent-fg transition-transform group-hover:-rotate-6">
-            {brand.monogram}
-          </span>
+          <Image
+            src="/logo-mark.png"
+            alt=""
+            width={80}
+            height={80}
+            priority
+            className="h-9 w-9 transition-transform duration-300 group-hover:-rotate-6"
+          />
           <span className="font-display text-[15px] font-semibold tracking-tight">
             {brand.name.toLowerCase()}
             <span className="text-accent">.</span>

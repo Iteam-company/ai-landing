@@ -1,13 +1,3 @@
-// The content contract for this template — types only, no copy.
-//
-// `Site` is the marketing copy every section reads (the Storyblok-seedable shape);
-// `Ui` is the interface chrome that is not marketing copy: button states, aria
-// labels, form placeholders, API validation messages, the admin panel and the
-// transactional emails.
-//
-// One implementation of each lives per locale in `content/<locale>/{site,ui}.ts`,
-// and `content/index.ts` is the registry that resolves them by locale.
-
 export interface NavItem {
   label: string;
   href: string;
@@ -23,72 +13,103 @@ export interface Stat {
   label: string;
 }
 
-/** A node in the hero's interactive n8n-style flow diagram. */
 export interface FlowNode {
   id: string;
   label: string;
-  /** Mono sub-label, e.g. "webhook" or "gpt-4o". */
   meta: string;
 }
 
+export interface WorkflowDataPoint {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+}
+
+export interface LeadWorkflowContent {
+  kind: "lead";
+  input: { eyebrow: string; name: string; quote: string; source: string };
+  analysis: { eyebrow: string; points: WorkflowDataPoint[] };
+  qualified: { eyebrow: string; score: number; scoreMax: number };
+  action: { eyebrow: string; items: string[] };
+}
+
+export interface EmailWorkflowContent {
+  kind: "email";
+  input: { eyebrow: string; from: string; subject: string; quote: string };
+  analysis: { eyebrow: string; points: WorkflowDataPoint[] };
+  context: { eyebrow: string; points: WorkflowDataPoint[] };
+  action: { eyebrow: string; items: string[] };
+}
+
+export interface CrmWorkflowContent {
+  kind: "crm";
+  input: { eyebrow: string; duration: string };
+  analysis: { eyebrow: string; points: WorkflowDataPoint[] };
+  result: { eyebrow: string; points: WorkflowDataPoint[] };
+}
+
+export interface KnowledgeWorkflowContent {
+  kind: "knowledge";
+  input: { eyebrow: string; quote: string };
+  search: { eyebrow: string; points: WorkflowDataPoint[] };
+  answer: { eyebrow: string; text: string; sources: string[] };
+}
+
+export type HeroWorkflowContent =
+  | LeadWorkflowContent
+  | EmailWorkflowContent
+  | CrmWorkflowContent
+  | KnowledgeWorkflowContent;
+
+export interface HeroScenario {
+  id: string;
+  title: string;
+  subtitle: string;
+  flow: {
+    label: string;
+    workflow: HeroWorkflowContent;
+    status: string;
+  };
+}
+
 export interface PainCard {
-  /** Mono category chip, e.g. "sales". */
   tag: string;
-  /** Large, scannable process metric, e.g. "< 1 min". */
   metric: string;
-  /** What the metric measures. */
   metricLabel: string;
   title: string;
   description: string;
-  /** Concrete operational change delivered by automation. */
   outcome: string;
 }
 
-/** Lucide icon key for a Solution — kept as a serializable string (not a
- *  component) so the data stays CMS-friendly; components/sections/solutions
- *  resolves it to the actual icon. */
 export type SolutionIcon = "radar" | "bot" | "library" | "workflow";
 
-/** One stage of an agent's live demo sequence, played back in order. */
 export interface SolutionStage {
   id: string;
-  /** Short node title, e.g. "Reading message". 2–5 words. */
   label: string;
-  /** One short line of example detail, e.g. "New message via Telegram". */
   detail: string;
-  /** What kind of stage this is — drives the node/rail visual treatment. */
   tone: "input" | "agent" | "result";
-  /** Plays a brief typing reveal on `detail` — use sparingly, at most once
-   *  per sequence, only where the agent is visibly composing a response. */
   typing?: boolean;
 }
 
 export interface Solution {
-  /** Stable key — drives the agent switcher's selection state. */
   id: string;
   index: string;
-  /** Product/module name shown as a secondary label. */
   name: string;
   icon: SolutionIcon;
-  /** Outcome-led headline. */
   title: string;
   description: string;
-  /** The agent's live demo: a short, ordered sequence of stages. */
   demo: {
     caption: string;
     ariaLabel: string;
     stages: SolutionStage[];
   };
-  /** Short mono tags — the services this agent touches. */
   tags: string[];
 }
 
-/** A stage of the showcased architecture (the animated pipeline). */
 export interface PipelineStep {
   index: string;
   title: string;
   description: string;
-  /** Mono metadata shown under the step, e.g. "~3 сек". */
   meta: string;
 }
 
@@ -97,7 +118,6 @@ export interface PricingTier {
   name: string;
   price: string;
   priceNote: string;
-  /** Delivery time, e.g. "5–7 дней". */
   term: string;
   summary: string;
   items: string[];
@@ -126,7 +146,6 @@ export interface FaqItem {
 }
 
 export interface FounderProfile {
-  /** Mono label in the founder panel's console bar. */
   caption: string;
   name: string;
   role: string;
@@ -159,10 +178,8 @@ export interface Site {
     ogImage: string;
   };
   brand: {
-    /** Short glyph shown in the logo mark, e.g. "NF". */
     monogram: string;
     name: string;
-    /** Mono suffix after the dot, e.g. "ai". */
     suffix: string;
   };
   nav: {
@@ -171,19 +188,10 @@ export interface Site {
   };
   hero: {
     eyebrow: string;
-    title: string;
-    subtitle: string;
     primaryCta: CtaLink;
     secondaryCta: CtaLink;
     stats: Stat[];
-    flow: {
-      /** Mono label on the diagram frame. */
-      label: string;
-      nodes: FlowNode[];
-      /** Status line under the diagram. */
-      status: string;
-    };
-    /** Integration names scrolled in the marquee strip. */
+    scenarios: HeroScenario[];
     marquee: string[];
   };
   pains: {
@@ -203,16 +211,13 @@ export interface Site {
     title: string;
     subtitle: string;
     steps: PipelineStep[];
-    /** The "your data, your logic" note under the animation. */
     note: string;
-    /** Mono caption on the player frame. */
     caption: string;
   };
   about: {
     eyebrow: string;
     title: string;
     subtitle: string;
-    /** Short trust markers shown under the founder panel, e.g. "ROI-first". */
     trust: string[];
     founder: FounderProfile;
   };
@@ -220,24 +225,19 @@ export interface Site {
     eyebrow: string;
     title: string;
     subtitle: string;
-    /** Mono label in the comparison panel's console bar. */
     caption: string;
-    /** Screen-reader label for the empty criteria column header. */
     criteriaLabel: string;
     options: ComparisonOption[];
     rows: ComparisonRow[];
     note: string;
-    /** Transition link into the booking block below. */
     transition: string;
   };
   faq: {
     eyebrow: string;
     title: string;
     subtitle: string;
-    /** Mono label in the FAQ panel's console bar. */
     caption: string;
     items: FaqItem[];
-    /** Transition link into the booking block below. */
     transition: string;
   };
   pricing: {
@@ -245,7 +245,6 @@ export interface Site {
     title: string;
     subtitle: string;
     tiers: PricingTier[];
-    /** Mono footnote under the cards. */
     note: string;
   };
   contact: {
@@ -255,9 +254,7 @@ export interface Site {
     calendar: {
       title: string;
       description: string;
-      /** Shown when no Cal.com / Calendly link is configured yet. */
       placeholder: string;
-      /** Mono caption over the embed. */
       caption: string;
     };
     form: {
@@ -270,12 +267,10 @@ export interface Site {
       sending: string;
       success: string;
       consent: string;
-      /** Shown instead of the form when no endpoint is configured. */
       disabled: string;
     };
     channels: ContactChannel[];
   };
-  /** Copy for the optional Business Calendar block (feature: calendar). */
   booking: {
     eyebrow: string;
     title: string;
@@ -283,7 +278,6 @@ export interface Site {
     cta: string;
     success: string;
   };
-  /** Copy for the optional customer-accounts block (feature: customers). */
   customers: {
     eyebrow: string;
     title: string;
@@ -291,7 +285,6 @@ export interface Site {
   };
   footer: {
     tagline: string;
-    /** Use {year} as a placeholder. */
     copyright: string;
     links: NavItem[];
     note: string;
@@ -303,15 +296,12 @@ export interface Ui {
     menu: string;
     language: string;
     close: string;
-    diagram: string;
-    /** Tablist label for the solutions section's agent switcher. */
     agents: string;
   };
   pricing: {
     recommended: string;
   };
   pains: {
-    /** Toggle that reveals the automated outcome on touch/keyboard. */
     seeResult: string;
     hideResult: string;
   };
@@ -342,9 +332,7 @@ export interface Ui {
     submitLogin: string;
     submitSignup: string;
     failed: string;
-    /** Shown on a 409 from /api/auth/signup. */
     emailTaken: string;
-    /** Shown on a 401 from /api/auth/login. */
     badCredentials: string;
   };
   admin: {

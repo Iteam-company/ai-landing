@@ -50,8 +50,14 @@ export async function POST(request: Request) {
   // gets their own language; the agency gets the site's default one.
   const meta = siteMeta();
   await sendMail({ to: doc.email, ...bookingCustomerEmail({ ...meta, locale, booking: doc }) });
-  const adminTo = process.env.ADMIN_USER;
-  if (adminTo) await sendMail({ to: adminTo, ...bookingAdminEmail({ ...meta, booking: doc }) });
+  // ADMIN_USER is the primary recipient; NOTIFY_EMAILS (comma-separated) adds
+  // extra people (e.g. a second team member) to the same notification.
+  const adminRecipients = [process.env.ADMIN_USER, ...(process.env.NOTIFY_EMAILS ?? "").split(",")]
+    .map((addr) => addr?.trim())
+    .filter((addr): addr is string => Boolean(addr));
+  if (adminRecipients.length) {
+    await sendMail({ to: adminRecipients.join(", "), ...bookingAdminEmail({ ...meta, booking: doc }) });
+  }
 
   return NextResponse.json({ ok: true, id: doc.id }, { status: 201 });
 }
