@@ -127,6 +127,11 @@
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
   }
 
+  .lightfall-fade {
+    mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.8) 45%, black 100%);
+    -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.8) 45%, black 100%);
+  }
+
   .comparison-table [data-featured],
   .comparison-table [data-featured-label],
   .comparison-table [data-featured-price],

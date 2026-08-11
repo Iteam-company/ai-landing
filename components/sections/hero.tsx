@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { WorkflowCardSwap } from "@/components/workflow-card-swap";
 import { HeroCopy } from "@/components/hero-copy";
 import { CallModal } from "@/components/call-modal";
-import { DotField } from "@/components/effects/dot-field";
+import { Lightfall } from "@/components/effects/lightfall";
 import type { HeroScenario, Site, Ui } from "@/content/types";
 
 interface HeroProps {
@@ -41,9 +41,8 @@ export function Hero({ content, calendar, a11y }: HeroProps) {
 
   return (
     <section id="top" className="relative overflow-hidden pt-28 pb-16 sm:pt-32 lg:pt-40">
-      <div className="bloom pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[42rem]" />
-      <div aria-hidden className="field-fade pointer-events-none absolute inset-0 -z-10">
-        <DotField className="relative h-full w-full" />
+      <div aria-hidden className="lightfall-fade pointer-events-none absolute inset-0 -z-10">
+        <Lightfall className="h-full w-full" />
       </div>
 
       <Container>
