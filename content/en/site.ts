@@ -24,13 +24,13 @@ export const site: Site = {
       { label: "architecture", href: "#showcase" },
       // { label: "pricing", href: "#pricing" },
       { label: "about us", href: "#about" },
-      { label: "contact", href: "#contact" },
+      { label: "contact", href: "#booking" },
     ],
     cta: { label: "Book a call", href: "#contact" },
   },
   hero: {
     eyebrow: "Cut costs · faster lead response · launch in 7 days",
-    title: "Save money and process every lead faster—in just 7 days",
+    title: "Save money and process every lead faster - in just 7 days",
     subtitle:
       "We remove bottlenecks from sales, support and CRM—helping you cut operating costs by up to 40% while every new request gets an immediate response.",
     primaryCta: { label: "Book a call", href: "#contact" },
@@ -525,8 +525,8 @@ export const site: Site = {
     copyright: "© {year} Neuroflow. Automation without magic — just processes and logs.",
     links: [
       { label: "solutions", href: "#solutions" },
-      { label: "comparison", href: "#comparison" },
-      { label: "contact", href: "#contact" },
+      { label: "about us", href: "#about" },
+      { label: "contact", href: "#booking" },
     ],
     note: "Working remotely · timezone UTC+2",
   },
