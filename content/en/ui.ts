@@ -7,6 +7,17 @@ export const ui: Ui = {
     close: "Close",
     agents: "AI agents",
   },
+  palette: {
+    label: "Color palette",
+    names: {
+      ember: "Ember",
+      paper: "Paper",
+      cobalt: "Cobalt",
+      crimson: "Crimson",
+      solar: "Solar",
+      monochrome: "Monochrome",
+    },
+  },
   pricing: { recommended: "recommended" },
   pains: { seeResult: "See automated result", hideResult: "Hide result" },
   form: {

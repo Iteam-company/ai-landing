@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
 import { Renderer, Program, Mesh, Triangle } from "ogl";
+import { PALETTE_CHANGE_EVENT } from "@/lib/palettes";
 
 export interface LightfallProps {
   className?: string;
@@ -55,6 +56,25 @@ function prepColors(input: string[]) {
   return { arr, count, avg };
 }
 
+function resolveCssVar(name: string, fallback: string): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return raw || fallback;
+}
+
+function mixHex(a: string, b: string, t: number): string {
+  const [ar, ag, ab] = hexToRGB(a);
+  const [br, bg, bb] = hexToRGB(b);
+  const toHex = (v: number) => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0");
+  return `#${toHex(ar + (br - ar) * t)}${toHex(ag + (bg - ag) * t)}${toHex(ab + (bb - ab) * t)}`;
+}
+
+function deriveThemeColors(): { colors: string[]; backgroundColor: string } {
+  const accent = resolveCssVar("--color-accent", "#ff7a45");
+  const accentSoft = resolveCssVar("--color-accent-soft", "#ffa077");
+  const backgroundColor = resolveCssVar("--color-bg", "#0f0a08");
+  return { colors: [accent, accentSoft, mixHex(accent, "#000000", 0.4)], backgroundColor };
+}
+
 const vertex = `
 attribute vec2 position;
 attribute vec2 uv;
@@ -68,24 +88,24 @@ void main() {
 const fragment = `
 precision highp float;
 
-uniform vec3  iResolution;
-uniform vec2  iMouse;
+uniform vec3 iResolution;
+uniform vec2 iMouse;
 uniform float iTime;
 
-uniform vec3  uColor0;
-uniform vec3  uColor1;
-uniform vec3  uColor2;
-uniform vec3  uColor3;
-uniform vec3  uColor4;
-uniform vec3  uColor5;
-uniform vec3  uColor6;
-uniform vec3  uColor7;
-uniform int   uColorCount;
+uniform vec3 uColor0;
+uniform vec3 uColor1;
+uniform vec3 uColor2;
+uniform vec3 uColor3;
+uniform vec3 uColor4;
+uniform vec3 uColor5;
+uniform vec3 uColor6;
+uniform vec3 uColor7;
+uniform int uColorCount;
 
-uniform vec3  uBgColor;
-uniform vec3  uMouseColor;
+uniform vec3 uBgColor;
+uniform vec3 uMouseColor;
 uniform float uSpeed;
-uniform int   uStreakCount;
+uniform int uStreakCount;
 uniform float uStreakWidth;
 uniform float uStreakLength;
 uniform float uGlow;
@@ -194,8 +214,8 @@ void main() {
 
 export function Lightfall({
   className,
-  colors = ["#ff7a45", "#ffa077", "#c1531f"],
-  backgroundColor = "#0f0a08",
+  colors,
+  backgroundColor,
   speed = 0.3,
   streakCount = 2,
   streakWidth = 0.42,
@@ -232,7 +252,9 @@ export function Lightfall({
     canvas.style.display = "block";
     container.appendChild(canvas);
 
-    const { arr, count, avg } = prepColors(colors);
+    const themeDriven = colors === undefined && backgroundColor === undefined;
+    const initialTheme = themeDriven ? deriveThemeColors() : null;
+    const { arr, count, avg } = prepColors(colors ?? initialTheme!.colors);
 
     const uniforms = {
       iResolution: { value: [gl.drawingBufferWidth, gl.drawingBufferHeight, 1] },
@@ -247,7 +269,7 @@ export function Lightfall({
       uColor6: { value: arr[6] },
       uColor7: { value: arr[7] },
       uColorCount: { value: count },
-      uBgColor: { value: hexToRGB(backgroundColor) },
+      uBgColor: { value: hexToRGB(backgroundColor ?? initialTheme!.backgroundColor) },
       uMouseColor: { value: avg },
       uSpeed: { value: speed },
       uStreakCount: { value: Math.max(1, Math.min(16, Math.round(streakCount))) },
@@ -267,6 +289,24 @@ export function Lightfall({
     const program = new Program(gl, { vertex, fragment, uniforms });
     const geometry = new Triangle(gl);
     const mesh = new Mesh(gl, { geometry, program });
+
+    function onPaletteChange() {
+      const next = deriveThemeColors();
+      const p = prepColors(next.colors);
+      uniforms.uColor0.value = p.arr[0];
+      uniforms.uColor1.value = p.arr[1];
+      uniforms.uColor2.value = p.arr[2];
+      uniforms.uColor3.value = p.arr[3];
+      uniforms.uColor4.value = p.arr[4];
+      uniforms.uColor5.value = p.arr[5];
+      uniforms.uColor6.value = p.arr[6];
+      uniforms.uColor7.value = p.arr[7];
+      uniforms.uColorCount.value = p.count;
+      uniforms.uMouseColor.value = p.avg;
+      uniforms.uBgColor.value = hexToRGB(next.backgroundColor);
+      if (reduce) renderer.render({ scene: mesh });
+    }
+    if (themeDriven) window.addEventListener(PALETTE_CHANGE_EVENT, onPaletteChange);
 
     const resize = () => {
       const rect = container!.getBoundingClientRect();
@@ -342,6 +382,7 @@ export function Lightfall({
       stop();
       observer?.disconnect();
       ro.disconnect();
+      if (themeDriven) window.removeEventListener(PALETTE_CHANGE_EVENT, onPaletteChange);
       if (mouseInteraction) window.removeEventListener("pointermove", onPointerMove);
       if (canvas.parentElement === container) container.removeChild(canvas);
       program.remove();

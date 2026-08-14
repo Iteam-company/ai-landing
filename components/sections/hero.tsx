@@ -9,15 +9,26 @@ import { WorkflowCardSwap } from "@/components/workflow-card-swap";
 import { HeroCopy } from "@/components/hero-copy";
 import { CallModal } from "@/components/call-modal";
 import { Lightfall } from "@/components/effects/lightfall";
+import { cn } from "@/lib/utils";
 import type { HeroScenario, Site, Ui } from "@/content/types";
 
 interface HeroProps {
   content: Site["hero"];
   calendar: Site["contact"]["calendar"];
   a11y: Ui["a11y"];
+  /**
+   * Gates the entrance animation + interactivity to the exact moment
+   * AutomationNetwork's ENTER CORE fly-in dissolves into this section (see
+   * onRevealChange in automation-network-scene.tsx / the AutomationNetworkHero
+   * bridge component) — not geometric viewport intersection, which happens
+   * much earlier since Hero overlaps the tail of that section's sticky pin.
+   * Defaults to true (always shown) so Hero still works if ever rendered
+   * standalone, outside that bridge.
+   */
+  revealed?: boolean;
 }
 
-export function Hero({ content, calendar, a11y }: HeroProps) {
+export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
   const reduce = useReducedMotion();
 
   const [activeScenario, setActiveScenario] = React.useState(content.scenarios[0]);
@@ -40,7 +51,22 @@ export function Hero({ content, calendar, a11y }: HeroProps) {
   };
 
   return (
-    <section id="top" className="relative overflow-hidden pt-28 pb-16 sm:pt-32 lg:pt-40">
+    <section
+      id="top"
+      // -mt-[100dvh]: pulls Hero's document position up by exactly one
+      // sticky-pin-release's worth of scroll (AutomationNetwork's sticky
+      // panel is always h-dvh regardless of the section's own vh height —
+      // see automation-network.tsx) so Hero already fills the viewport the
+      // instant that panel unsticks, instead of needing another full
+      // viewport-height of scroll to catch up (which previously showed a
+      // blank Lightfall-only gap — the panel had already dissolved
+      // transparent by then, but nothing was positioned underneath it yet).
+      // AutomationNetwork's z-10 (see automation-network.tsx) keeps it
+      // painted above this overlap until its own canvas/Lightfall actually
+      // dissolve, so Hero is invisible — not prematurely showing through —
+      // for the entire pinned scroll before ENTER CORE's tail.
+      className="relative mt-[-100dvh] overflow-hidden pt-28 pb-16 sm:pt-32 lg:pt-40"
+    >
       <div aria-hidden className="lightfall-fade pointer-events-none absolute inset-0 -z-10">
         <Lightfall className="h-full w-full" />
       </div>
@@ -49,8 +75,16 @@ export function Hero({ content, calendar, a11y }: HeroProps) {
         <motion.div
           variants={container}
           initial="hidden"
-          animate="show"
-          className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16"
+          animate={revealed ? "show" : "hidden"}
+          className={cn(
+            "grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16",
+            // Belt-and-suspenders: the opaque backdrop in
+            // automation-network-scene.tsx is what actually keeps this
+            // hidden/unclickable during FLY-IN — this just makes sure
+            // nothing here can intercept a click even at the very edge of
+            // that panel before REVEAL flips it on.
+            revealed ? "pointer-events-auto" : "pointer-events-none",
+          )}
         >
           <div>
             <motion.p

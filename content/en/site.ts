@@ -24,6 +24,51 @@ export const site: Site = {
     ],
     cta: { label: "Book a call", href: "#contact" },
   },
+  automationNetwork: {
+    nodes: [
+      {
+        id: "crm",
+        label: "CRM",
+        actionStatus: "LEAD CREATED",
+        workflowSteps: ["Lead captured", "Qualified", "CRM updated", "Follow-up created"],
+      },
+      {
+        id: "email",
+        label: "Email",
+        actionStatus: "FOLLOW-UP READY",
+        workflowSteps: ["Email received", "Intent detected", "Reply drafted", "Follow-up scheduled"],
+      },
+      {
+        id: "telegram",
+        label: "Telegram",
+        workflowSteps: ["Lead received", "Message parsed", "Sent to AI"],
+      },
+      {
+        id: "calendar",
+        label: "Calendar",
+        actionStatus: "SLOT FOUND",
+        workflowSteps: ["Availability checked", "Slot selected", "Meeting booked"],
+      },
+      {
+        id: "docs",
+        label: "Docs",
+        actionStatus: "CONTEXT SAVED",
+        workflowSteps: ["Context extracted", "Knowledge stored", "Available to AI"],
+      },
+    ],
+    processingStatuses: ["ANALYZING", "QUALIFYING", "EXTRACTING DATA"],
+    completeMessage: "One lead. Zero manual steps.",
+    exploreHint: {
+      title: "Explore your automation system",
+      subtitle: "Hover any node to see what it handles.",
+      mobileSubtitle: "Tap any node to see what it handles.",
+    },
+    intro: {
+      headline: "Explore your automation system",
+      subline: "See how every lead moves through your AI workflow.",
+      hint: "Scroll down",
+    },
+  },
   hero: {
     eyebrow: "Cut costs · faster lead response · launch in 7 days",
     primaryCta: { label: "Book a call", href: "#contact" },

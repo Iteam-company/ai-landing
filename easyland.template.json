@@ -12,7 +12,12 @@
   "palettes": [
     { "id": "voltage", "label": "Voltage", "accent": "#c8f042", "bg": "#0a0b0f" },
     { "id": "ember", "label": "Ember", "accent": "#ff7a45", "bg": "#0f0a08" },
-    { "id": "plasma", "label": "Plasma", "accent": "#ff4d8d", "bg": "#0c0810" }
+    { "id": "plasma", "label": "Plasma", "accent": "#ff4d8d", "bg": "#0c0810" },
+    { "id": "paper", "label": "Paper", "accent": "#201d17", "bg": "#f2efe7" },
+    { "id": "cobalt", "label": "Cobalt", "accent": "#2f7dff", "bg": "#060a14" },
+    { "id": "crimson", "label": "Crimson", "accent": "#e2222f", "bg": "#0b0605" },
+    { "id": "solar", "label": "Solar", "accent": "#ff8a00", "bg": "#100b06" },
+    { "id": "monochrome", "label": "Monochrome", "accent": "#f5f5f5", "bg": "#060606" }
   ],
   "defaultPalette": "voltage",
   "paletteEnvVar": "NEXT_PUBLIC_SITE_PALETTE",
