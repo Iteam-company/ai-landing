@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { CallModal } from "@/components/call-modal";
 import { LangSwitcher } from "@/components/lang-switcher";
+import { PaletteSwitcher, PaletteSwitcherMobile } from "@/components/palette-switcher";
 import type { Site, Ui } from "@/content/types";
 import type { Locale } from "@/lib/lang";
 
@@ -15,16 +16,15 @@ interface HeaderProps {
   brand: Site["brand"];
   locale: Locale;
   a11y: Ui["a11y"];
+  palette: Ui["palette"];
   calendar: Site["contact"]["calendar"];
 }
 
-export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
+export function Header({ nav, brand, locale, a11y, palette, calendar }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [open, setOpen] = React.useState(false);
 
-  // The hairline under the bar doubles as a read-progress meter — the console
-  // always shows how far the signal has travelled.
   React.useEffect(() => {
     const onScroll = () => {
       const max = document.body.scrollHeight - window.innerHeight;
@@ -42,6 +42,7 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
 
   return (
     <header
+      id="site-header"
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-colors duration-300",
         scrolled ? "bg-bg/80 backdrop-blur-xl" : "bg-transparent",
@@ -78,6 +79,7 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
 
         <div className="flex items-center gap-2">
           <LangSwitcher locale={locale} label={a11y.language} className="hidden sm:flex" />
+          <PaletteSwitcher label={palette.label} names={palette.names} className="hidden sm:flex" />
           <CallModal
             label={nav.cta.label}
             calendar={calendar}
@@ -97,7 +99,6 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
         </div>
       </div>
 
-      {/* progress rail */}
       <div className={cn("h-px w-full transition-colors", scrolled ? "bg-border" : "bg-transparent")}>
         <div
           className="h-px bg-accent transition-[width] duration-150 ease-out"
@@ -145,6 +146,11 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
                   label={a11y.language}
                   className="justify-center sm:hidden"
                   onNavigate={() => setOpen(false)}
+                />
+                <PaletteSwitcherMobile
+                  label={palette.label}
+                  names={palette.names}
+                  className="sm:hidden"
                 />
               </div>
             </div>

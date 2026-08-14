@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../globals.css";
-import { resolvePalette } from "@/lib/palettes";
+import { resolvePalette, PALETTE_STORAGE_KEY, SWITCHER_PALETTES } from "@/lib/palettes";
 import { PalettePreview } from "@/components/palette-preview";
 import { getContent } from "@/content";
 import { fontVariables } from "@/app/fonts";
@@ -15,14 +15,6 @@ import {
   localeHref,
 } from "@/lib/lang";
 
-// Root layout of the localized site. It sits on the optional catch-all segment so
-// it can read the locale and put it on <html lang>: the default locale renders at
-// "/" and every other locale at "/<locale>/" — both prerendered, so a static
-// export needs no proxy and the canonical URL takes no redirect hop.
-//
-// /admin has its own root layout (app/admin/layout.tsx); route handlers under
-// app/api need none.
-
 interface LangParams {
   params: Promise<{ lang?: string[] }>;
 }
@@ -31,7 +23,6 @@ export function generateStaticParams(): { lang: string[] }[] {
   return [{ lang: [] }, ...PREFIXED_LOCALES.map((locale) => ({ lang: [locale] }))];
 }
 
-// Only the locales above exist; anything else is a 404 rather than a runtime render.
 export const dynamicParams = false;
 
 export async function generateMetadata({ params }: LangParams): Promise<Metadata> {
@@ -78,8 +69,6 @@ export default async function RootLayout({
   const locale = localeFromSegments((await params).lang);
   if (!locale) notFound();
 
-  // Build-time palette (per-client via NEXT_PUBLIC_SITE_PALETTE; defaults to voltage).
-  // PalettePreview overrides this from ?color= during local CLI preview only.
   const palette = resolvePalette(process.env.NEXT_PUBLIC_SITE_PALETTE);
 
   return (
@@ -87,8 +76,15 @@ export default async function RootLayout({
       lang={HTML_LANG[locale]}
       data-palette={palette}
       className={`${fontVariables} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-bg text-fg">
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k=${JSON.stringify(PALETTE_STORAGE_KEY)},v=localStorage.getItem(k);if(v&&${JSON.stringify(SWITCHER_PALETTES)}.indexOf(v)>-1){document.documentElement.dataset.palette=v;}}catch(e){}})();`,
+          }}
+        />
         <PalettePreview />
         {children}
       </body>

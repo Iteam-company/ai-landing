@@ -19,6 +19,13 @@ export interface FlowNode {
   meta: string;
 }
 
+export interface AutomationNetworkNode {
+  id: string;
+  label: string;
+  actionStatus?: string;
+  workflowSteps: string[];
+}
+
 export interface WorkflowDataPoint {
   label: string;
   value: string;
@@ -186,6 +193,13 @@ export interface Site {
     items: NavItem[];
     cta: CtaLink;
   };
+  automationNetwork: {
+    nodes: AutomationNetworkNode[];
+    processingStatuses: string[];
+    completeMessage: string;
+    exploreHint: { title: string; subtitle: string; mobileSubtitle: string };
+    intro: { headline: string; subline: string; hint: string };
+  };
   hero: {
     eyebrow: string;
     primaryCta: CtaLink;
@@ -297,6 +311,17 @@ export interface Ui {
     language: string;
     close: string;
     agents: string;
+  };
+  palette: {
+    label: string;
+    names: {
+      ember: string;
+      paper: string;
+      cobalt: string;
+      crimson: string;
+      solar: string;
+      monochrome: string;
+    };
   };
   pricing: {
     recommended: string;
