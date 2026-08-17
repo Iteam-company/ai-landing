@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
 import { Renderer, Program, Mesh, Triangle } from "ogl";
-import { PALETTE_CHANGE_EVENT } from "@/lib/palettes";
 
 export interface LightfallProps {
   className?: string;
@@ -290,24 +289,6 @@ export function Lightfall({
     const geometry = new Triangle(gl);
     const mesh = new Mesh(gl, { geometry, program });
 
-    function onPaletteChange() {
-      const next = deriveThemeColors();
-      const p = prepColors(next.colors);
-      uniforms.uColor0.value = p.arr[0];
-      uniforms.uColor1.value = p.arr[1];
-      uniforms.uColor2.value = p.arr[2];
-      uniforms.uColor3.value = p.arr[3];
-      uniforms.uColor4.value = p.arr[4];
-      uniforms.uColor5.value = p.arr[5];
-      uniforms.uColor6.value = p.arr[6];
-      uniforms.uColor7.value = p.arr[7];
-      uniforms.uColorCount.value = p.count;
-      uniforms.uMouseColor.value = p.avg;
-      uniforms.uBgColor.value = hexToRGB(next.backgroundColor);
-      if (reduce) renderer.render({ scene: mesh });
-    }
-    if (themeDriven) window.addEventListener(PALETTE_CHANGE_EVENT, onPaletteChange);
-
     const resize = () => {
       const rect = container!.getBoundingClientRect();
       renderer.setSize(rect.width, rect.height);
@@ -382,7 +363,6 @@ export function Lightfall({
       stop();
       observer?.disconnect();
       ro.disconnect();
-      if (themeDriven) window.removeEventListener(PALETTE_CHANGE_EVENT, onPaletteChange);
       if (mouseInteraction) window.removeEventListener("pointermove", onPointerMove);
       if (canvas.parentElement === container) container.removeChild(canvas);
       program.remove();

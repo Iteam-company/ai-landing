@@ -31,7 +31,6 @@ import {
   sampleCanvasDissolveT,
   isHoverPhaseActive,
 } from "./timeline";
-import { PALETTE_CHANGE_EVENT } from "@/lib/palettes";
 
 export interface AutomationNetworkNodeInput {
   id: string;
@@ -1087,8 +1086,6 @@ export class AutomationNetworkSceneController {
 
   private hoveredNodeId: string | null = null;
 
-  private handlePaletteChange = () => this.refreshTheme();
-
   private progress = 0;
   private reduceMotion: boolean;
   private flowTime = 0;
@@ -1450,8 +1447,6 @@ export class AutomationNetworkSceneController {
     this.resizeObserver.observe(container);
     this.resize();
     this.renderFrame(0);
-
-    window.addEventListener(PALETTE_CHANGE_EVENT, this.handlePaletteChange);
   }
 
   setProgress(value: number) {
@@ -1538,7 +1533,6 @@ export class AutomationNetworkSceneController {
 
   dispose() {
     this.stop();
-    window.removeEventListener(PALETTE_CHANGE_EVENT, this.handlePaletteChange);
     this.resizeObserver.disconnect();
     this.nodes.forEach((n) => {
       n.orbitInnerMaterial.dispose();
