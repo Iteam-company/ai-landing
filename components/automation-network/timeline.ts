@@ -164,17 +164,8 @@ export const CORE_GLOW_TRACK: NumberKeyframe[] = [
   { t: 1, value: 0.85 },
 ];
 
-export const CONNECTION_CASCADE_SPREAD = 0.6;
-
-export function sampleConnectionDraw(progress: number, index: number, count: number): number {
-  return staggeredLocalT(
-    progress,
-    PHASES.assembly[0],
-    PHASES.assembly[1],
-    index,
-    count,
-    CONNECTION_CASCADE_SPREAD,
-  );
+export function sampleConnectionDraw(progress: number): number {
+  return progress >= PHASES.assembly[0] ? 1 : 0;
 }
 
 

@@ -35,7 +35,6 @@ import { PALETTE_CHANGE_EVENT } from "@/lib/palettes";
 
 export interface AutomationNetworkNodeInput {
   id: string;
-  label: string;
 }
 
 export interface LabelScreenPosition {
@@ -63,7 +62,6 @@ interface SceneControllerOptions {
 interface NodeRig {
   id: string;
   group: THREE.Group;
-  body: THREE.Mesh;
   orbitInner: THREE.Mesh;
   orbitInnerMaterial: THREE.ShaderMaterial;
   orbitMid: THREE.Mesh;
@@ -71,11 +69,8 @@ interface NodeRig {
   orbitOuter: THREE.Mesh;
   orbitOuterMaterial: THREE.ShaderMaterial;
   colorVariation: number;
-  stem: THREE.Mesh;
   stemMaterial: THREE.ShaderMaterial;
-  hotPoint: THREE.Mesh;
   hotPointMaterial: THREE.ShaderMaterial;
-  glow: THREE.Sprite;
   glowMaterial: THREE.SpriteMaterial;
   orbitSpinVariation: number;
   hoverBoostAmount: number;
@@ -84,7 +79,6 @@ interface NodeRig {
 
 interface ConnectionRig {
   nodeId: string;
-  mesh: THREE.Mesh;
   geometry: THREE.BufferGeometry;
   material: THREE.ShaderMaterial;
   turns: number;
@@ -93,6 +87,10 @@ interface ConnectionRig {
   curvatureScale: number;
   hoverBoostAmount: number;
   hoverDimAmount: number;
+  curve: THREE.CatmullRomCurve3;
+  curveMid: THREE.Vector3;
+  curveTarget: THREE.Vector3;
+  lastTubeTarget: THREE.Vector3;
 }
 
 const FOG_NEAR = 6;
@@ -100,6 +98,11 @@ const FOG_FAR = 15;
 
 const TUBE_RING_COUNT = 24;
 const TUBE_RADIAL_SEGMENTS = 8;
+const COMPACT_TUBE_RING_COUNT = 18;
+const COMPACT_TUBE_RADIAL_SEGMENTS = 6;
+
+const DESKTOP_DPR_CAP = 1.5;
+const COMPACT_DPR_CAP = 1.2;
 
 const TUBE_RADIUS = 0.02;
 const HELIX_RADIUS = 0.006;
@@ -125,7 +128,14 @@ const REVEAL_EDGE_WIDTH = 0.035;
 const CONNECTION_HOVER_IN_TIME_CONSTANT = 0.16;
 const CONNECTION_HOVER_OUT_TIME_CONSTANT = 0.24;
 
+const CONNECTION_REBUILD_EPSILON = 0.0025;
+const CONNECTION_REBUILD_EPSILON_SQ = CONNECTION_REBUILD_EPSILON * CONNECTION_REBUILD_EPSILON;
+
 const CORE_HOT_RADIUS = 0.22;
+const DESKTOP_CORE_HOT_DETAIL = 4;
+const COMPACT_CORE_HOT_DETAIL = 3;
+const CORE_HOT_INTENSITY = 0.8;
+const CORE_GLOW_SPRITE_BRIGHTNESS = 0.8;
 
 const CORE_SHELL_RADIUS = 0.32;
 const CORE_SHELL_DETAIL = 3;
@@ -180,6 +190,8 @@ const CORE_ORBIT_RINGS: CoreOrbitRingConfig[] = [
 
 const CORE_ORBIT_TUBULAR_SEGMENTS = 128;
 const CORE_ORBIT_RADIAL_SEGMENTS = 10;
+const COMPACT_CORE_ORBIT_TUBULAR_SEGMENTS = 88;
+const COMPACT_CORE_ORBIT_RADIAL_SEGMENTS = 7;
 
 const CORE_ORBIT_EMISSIVE_RANGE = 0.9;
 
@@ -222,6 +234,11 @@ const NODE_STEM_LENGTH = NODE_BODY_RADIUS * 0.85;
 const NODE_STEM_CENTER_Y = NODE_BODY_RADIUS * 0.925;
 const NODE_HOT_POINT_RADIUS = 0.03 * RELAY_SCALE;
 const NODE_HOT_POINT_OFFSET_Y = NODE_BODY_RADIUS * 1.35;
+
+const DESKTOP_NODE_ORBIT_RADIAL_SEGMENTS = 16;
+const DESKTOP_NODE_ORBIT_TUBULAR_SEGMENTS = 64;
+const COMPACT_NODE_ORBIT_RADIAL_SEGMENTS = 10;
+const COMPACT_NODE_ORBIT_TUBULAR_SEGMENTS = 40;
 
 const NODE_ORBIT_INNER_RADIUS = 0.25 * RELAY_SCALE;
 const NODE_ORBIT_INNER_TUBE = 0.011 * RELAY_SCALE;
@@ -1065,6 +1082,9 @@ export class AutomationNetworkSceneController {
   private hotColor: THREE.Color;
   private statusDarkColor: THREE.Color;
 
+  private readonly scratchColor = new THREE.Color();
+  private readonly scratchVec3 = new THREE.Vector3();
+
   private hoveredNodeId: string | null = null;
 
   private handlePaletteChange = () => this.refreshTheme();
@@ -1084,6 +1104,9 @@ export class AutomationNetworkSceneController {
   private nodeMeshScaleMultiplier = 1;
   private secondaryMotionScale = 1;
 
+  private readonly tubeRingCount: number;
+  private readonly tubeRadialSegments: number;
+
   constructor(container: HTMLElement, options: SceneControllerOptions) {
     this.container = container;
     this.reduceMotion = options.reduceMotion;
@@ -1091,13 +1114,17 @@ export class AutomationNetworkSceneController {
 
     const initialWidth = Math.max(1, container.getBoundingClientRect().width);
     const isInitiallyMobile = initialWidth < MOBILE_PARTICLE_WIDTH_THRESHOLD;
+    const isCompactTier = initialWidth < 1024;
+    this.tubeRingCount = isCompactTier ? COMPACT_TUBE_RING_COUNT : TUBE_RING_COUNT;
+    this.tubeRadialSegments = isCompactTier ? COMPACT_TUBE_RADIAL_SEGMENTS : TUBE_RADIAL_SEGMENTS;
 
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: true,
       powerPreference: "high-performance",
     });
-    const dpr = options.dpr ?? Math.min(window.devicePixelRatio || 1, 1.5);
+    const dprCap = isCompactTier ? COMPACT_DPR_CAP : DESKTOP_DPR_CAP;
+    const dpr = options.dpr ?? Math.min(window.devicePixelRatio || 1, dprCap);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setClearColor(0x000000, 0);
     const canvas = this.renderer.domElement;
@@ -1130,8 +1157,9 @@ export class AutomationNetworkSceneController {
     const structuralBodyColor = bg.clone().lerp(fgMuted, 0.22);
     const plasmaCoreColor = derivePlasmaCoreColor(accent);
 
-    this.coreHotMaterial = buildPlasmaOrbMaterial(plasmaCoreColor, accent, 1, 0.5, 0.16);
-    this.coreHot = new THREE.Mesh(new THREE.IcosahedronGeometry(CORE_HOT_RADIUS, 4), this.coreHotMaterial);
+    this.coreHotMaterial = buildPlasmaOrbMaterial(plasmaCoreColor, accent, CORE_HOT_INTENSITY, 0.5, 0.16);
+    const coreHotDetail = isCompactTier ? COMPACT_CORE_HOT_DETAIL : DESKTOP_CORE_HOT_DETAIL;
+    this.coreHot = new THREE.Mesh(new THREE.IcosahedronGeometry(CORE_HOT_RADIUS, coreHotDetail), this.coreHotMaterial);
     this.scene.add(this.coreHot);
 
     this.coreShellMaterial = buildPlasmaShellMaterial(plasmaCoreColor, accent);
@@ -1146,13 +1174,15 @@ export class AutomationNetworkSceneController {
       1 + (seededUnit(513) - 0.5) * 0.08,
     );
 
+    const coreOrbitTubularSegments = isCompactTier ? COMPACT_CORE_ORBIT_TUBULAR_SEGMENTS : CORE_ORBIT_TUBULAR_SEGMENTS;
+    const coreOrbitRadialSegments = isCompactTier ? COMPACT_CORE_ORBIT_RADIAL_SEGMENTS : CORE_ORBIT_RADIAL_SEGMENTS;
     CORE_ORBIT_RINGS.forEach((config, i) => {
       const curve = new CoreOrbitEllipseCurve(config.radiusX, config.radiusY);
       const geometry = new THREE.TubeGeometry(
         curve,
-        CORE_ORBIT_TUBULAR_SEGMENTS,
+        coreOrbitTubularSegments,
         config.tubeRadius,
-        CORE_ORBIT_RADIAL_SEGMENTS,
+        coreOrbitRadialSegments,
         true,
       );
       const phase = seededUnit(i * 6.47 + 810) * Math.PI * 2;
@@ -1236,9 +1266,11 @@ export class AutomationNetworkSceneController {
       roughness: 0.18,
       metalness: 0.58,
     });
-    this.nodeOrbitInnerGeometry = new THREE.TorusGeometry(NODE_ORBIT_INNER_RADIUS, NODE_ORBIT_INNER_TUBE, 16, 64);
-    this.nodeOrbitMidGeometry = new THREE.TorusGeometry(NODE_ORBIT_MID_RADIUS, NODE_ORBIT_MID_TUBE, 16, 64);
-    this.nodeOrbitOuterGeometry = new THREE.TorusGeometry(NODE_ORBIT_OUTER_RADIUS, NODE_ORBIT_OUTER_TUBE, 16, 64);
+    const nodeOrbitRadial = isCompactTier ? COMPACT_NODE_ORBIT_RADIAL_SEGMENTS : DESKTOP_NODE_ORBIT_RADIAL_SEGMENTS;
+    const nodeOrbitTubular = isCompactTier ? COMPACT_NODE_ORBIT_TUBULAR_SEGMENTS : DESKTOP_NODE_ORBIT_TUBULAR_SEGMENTS;
+    this.nodeOrbitInnerGeometry = new THREE.TorusGeometry(NODE_ORBIT_INNER_RADIUS, NODE_ORBIT_INNER_TUBE, nodeOrbitRadial, nodeOrbitTubular);
+    this.nodeOrbitMidGeometry = new THREE.TorusGeometry(NODE_ORBIT_MID_RADIUS, NODE_ORBIT_MID_TUBE, nodeOrbitRadial, nodeOrbitTubular);
+    this.nodeOrbitOuterGeometry = new THREE.TorusGeometry(NODE_ORBIT_OUTER_RADIUS, NODE_ORBIT_OUTER_TUBE, nodeOrbitRadial, nodeOrbitTubular);
     this.nodeStemGeometry = new THREE.CylinderGeometry(NODE_STEM_RADIUS, NODE_STEM_RADIUS, NODE_STEM_LENGTH, 10, 1, false);
     this.nodeHotPointGeometry = new THREE.IcosahedronGeometry(NODE_HOT_POINT_RADIUS, 2);
 
@@ -1312,18 +1344,14 @@ export class AutomationNetworkSceneController {
       this.nodes.push({
         id: node.id,
         group,
-        body,
         orbitInner,
         orbitInnerMaterial,
         orbitMid,
         orbitMidMaterial,
         orbitOuter,
         orbitOuterMaterial,
-        stem,
         stemMaterial,
-        hotPoint,
         hotPointMaterial,
-        glow,
         glowMaterial,
         orbitSpinVariation: (seededUnit(i * 5.31 + 30) - 0.5) * 2 * NODE_ORBIT_SPIN_VARIATION,
         colorVariation: 1 + (seededUnit(i * 5.31 + 31) - 0.5) * 2 * NODE_COLOR_VARIATION,
@@ -1333,16 +1361,16 @@ export class AutomationNetworkSceneController {
     });
     this.nodesById = new Map(this.nodes.map((n) => [n.id, n]));
 
-    const tubeIndices = buildTubeIndices(TUBE_RING_COUNT, TUBE_RADIAL_SEGMENTS);
+    const tubeIndices = buildTubeIndices(this.tubeRingCount, this.tubeRadialSegments);
     const connectionOpaqueBoost = relativeLuminance(bg) > 0.5 ? 1 : 0;
     this.nodes.forEach((node, i) => {
       const geometry = new THREE.BufferGeometry();
       const positionAttr = new THREE.BufferAttribute(
-        new Float32Array(TUBE_RING_COUNT * TUBE_RADIAL_SEGMENTS * 3),
+        new Float32Array(this.tubeRingCount * this.tubeRadialSegments * 3),
         3,
       );
       const normalAttr = new THREE.BufferAttribute(
-        new Float32Array(TUBE_RING_COUNT * TUBE_RADIAL_SEGMENTS * 3),
+        new Float32Array(this.tubeRingCount * this.tubeRadialSegments * 3),
         3,
       );
       positionAttr.setUsage(THREE.DynamicDrawUsage);
@@ -1351,13 +1379,13 @@ export class AutomationNetworkSceneController {
       geometry.setAttribute("normal", normalAttr);
 
       const uvAttr = new THREE.BufferAttribute(
-        new Float32Array(TUBE_RING_COUNT * TUBE_RADIAL_SEGMENTS * 2),
+        new Float32Array(this.tubeRingCount * this.tubeRadialSegments * 2),
         2,
       );
-      for (let ring = 0; ring < TUBE_RING_COUNT; ring++) {
-        for (let j = 0; j < TUBE_RADIAL_SEGMENTS; j++) {
-          const idx = ring * TUBE_RADIAL_SEGMENTS + j;
-          uvAttr.setXY(idx, j / TUBE_RADIAL_SEGMENTS, ring / (TUBE_RING_COUNT - 1));
+      for (let ring = 0; ring < this.tubeRingCount; ring++) {
+        for (let j = 0; j < this.tubeRadialSegments; j++) {
+          const idx = ring * this.tubeRadialSegments + j;
+          uvAttr.setXY(idx, j / this.tubeRadialSegments, ring / (this.tubeRingCount - 1));
         }
       }
       geometry.setAttribute("uv", uvAttr);
@@ -1372,9 +1400,13 @@ export class AutomationNetworkSceneController {
       const mesh = new THREE.Mesh(geometry, material);
       mesh.frustumCulled = false;
       this.scene.add(mesh);
+
+      const curveMid = new THREE.Vector3();
+      const curveTarget = new THREE.Vector3();
+      const curve = new THREE.CatmullRomCurve3([this.coreOrigin, curveMid, curveTarget]);
+
       this.connections.push({
         nodeId: node.id,
-        mesh,
         geometry,
         material,
         turns,
@@ -1383,6 +1415,11 @@ export class AutomationNetworkSceneController {
         curvatureScale,
         hoverBoostAmount: 0,
         hoverDimAmount: 0,
+        curve,
+        curveMid,
+        curveTarget,
+        // Infinity guarantees the first frame always builds the tube.
+        lastTubeTarget: new THREE.Vector3(Infinity, Infinity, Infinity),
       });
     });
 
@@ -1546,43 +1583,47 @@ export class AutomationNetworkSceneController {
     }
   }
 
-  private buildConnectionCurve(to: THREE.Vector3, curvatureScale: number): THREE.CatmullRomCurve3 {
-    const mid = new THREE.Vector3(
+  private updateConnectionTube(connection: ConnectionRig, targetPosition: THREE.Vector3) {
+    const to = targetPosition;
+    const curvatureScale = connection.curvatureScale;
+    connection.curveTarget.copy(to);
+    connection.curveMid.set(
       (this.coreOrigin.x + to.x) / 2 + (to.z - this.coreOrigin.z) * 0.24 * curvatureScale,
       (this.coreOrigin.y + to.y) / 2 + 0.75 * curvatureScale,
       (this.coreOrigin.z + to.z) / 2 - (to.x - this.coreOrigin.x) * 0.24 * curvatureScale,
     );
-    return new THREE.CatmullRomCurve3([this.coreOrigin.clone(), mid, to.clone()]);
-  }
-
-  private updateConnectionTube(connection: ConnectionRig, targetPosition: THREE.Vector3) {
-    const curve = this.buildConnectionCurve(targetPosition, connection.curvatureScale);
-    const points = curve.getPoints(TUBE_RING_COUNT - 1);
-    const frenet = curve.computeFrenetFrames(TUBE_RING_COUNT - 1, false);
+    // curve.points reference curveMid/curveTarget directly (set at
+    // construction), so mutating them above already updates the curve —
+    // no new curve/point objects are allocated on this hot path.
+    const curve = connection.curve;
+    const ringCount = this.tubeRingCount;
+    const radialSegments = this.tubeRadialSegments;
+    const points = curve.getPoints(ringCount - 1);
+    const frenet = curve.computeFrenetFrames(ringCount - 1, false);
 
     const positionAttr = connection.geometry.getAttribute("position") as THREE.BufferAttribute;
     const normalAttr = connection.geometry.getAttribute("normal") as THREE.BufferAttribute;
     const twoPi = Math.PI * 2;
 
-    for (let ring = 0; ring < TUBE_RING_COUNT; ring++) {
+    for (let ring = 0; ring < ringCount; ring++) {
       const p = points[ring];
       const N = frenet.normals[ring];
       const B = frenet.binormals[ring];
-      const alongT = ring / (TUBE_RING_COUNT - 1);
+      const alongT = ring / (ringCount - 1);
 
-      for (let j = 0; j < TUBE_RADIAL_SEGMENTS; j++) {
-        const theta = (j / TUBE_RADIAL_SEGMENTS) * twoPi;
+      for (let j = 0; j < radialSegments; j++) {
+        const theta = (j / radialSegments) * twoPi;
         const cosT = Math.cos(theta);
         const sinT = Math.sin(theta);
         const nx = N.x * cosT + B.x * sinT;
         const ny = N.y * cosT + B.y * sinT;
         const nz = N.z * cosT + B.z * sinT;
 
-        const spiral = (alongT * connection.turns - j / TUBE_RADIAL_SEGMENTS) * twoPi + connection.phaseOffset;
+        const spiral = (alongT * connection.turns - j / radialSegments) * twoPi + connection.phaseOffset;
         const bulge = smoothstepJs(1 - HELIX_BAND_WIDTH, 1, Math.cos(spiral) * 0.5 + 0.5);
         const radius = TUBE_RADIUS * connection.radiusScale + HELIX_RADIUS * bulge;
 
-        const idx = ring * TUBE_RADIAL_SEGMENTS + j;
+        const idx = ring * radialSegments + j;
         positionAttr.setXYZ(idx, p.x + nx * radius, p.y + ny * radius, p.z + nz * radius);
         normalAttr.setXYZ(idx, nx, ny, nz);
       }
@@ -1604,9 +1645,22 @@ export class AutomationNetworkSceneController {
       this.lastFrameTime = time;
     }
 
+    const canvasDissolveT = sampleCanvasDissolveT(progress);
+    if (canvasDissolveT >= 1) {
+      if (this.onFrame) {
+        this.onFrame({
+          labels: [],
+          processingStatusOpacities: new Array(PROCESSING_STATUS_COUNT).fill(0),
+          actionStatusOpacities: Object.fromEntries(ACTION_NODE_IDS.map((id) => [id, 0])),
+          completeOpacity: 0,
+          canvasDissolveT,
+        });
+      }
+      return;
+    }
+
     const enterCoreT = sampleEnterCoreT(progress);
     const sceneContentOpacity = 1 - enterCoreT;
-    const canvasDissolveT = sampleCanvasDissolveT(progress);
     const motionProgress = this.reduceMotion ? Math.min(progress, PHASES.complete[1]) : progress;
     const detailReveal = Math.min(1, enterCoreT * 1.6);
 
@@ -1667,7 +1721,9 @@ export class AutomationNetworkSceneController {
 
     const coreOrbitEnergy = Math.min(1, coreGlow + processingBoost * 0.6);
 
-    const coreOrbitEmissive = this.fgMutedColor.clone().lerp(this.accentColor, coreOrbitEnergy * CORE_ORBIT_EMISSIVE_RANGE);
+    const coreOrbitEmissive = this.scratchColor
+      .copy(this.fgMutedColor)
+      .lerp(this.accentColor, coreOrbitEnergy * CORE_ORBIT_EMISSIVE_RANGE);
     const coreOrbitScale = coreScale * (1 + processingBoost * 0.06);
     this.coreOrbits.forEach((orbit) => {
       orbit.mesh.scale.setScalar(coreOrbitScale);
@@ -1686,7 +1742,10 @@ export class AutomationNetworkSceneController {
     const glowEnterCurve = 1 + Math.sin(Math.min(enterCoreT, 1) * Math.PI) * 0.85;
     this.coreGlowMaterial.opacity = Math.min(
       0.9,
-      (coreGlow + processingBoost * 0.45 + heartbeatActivity * 0.25) * coreVisibility * glowEnterCurve,
+      (coreGlow + processingBoost * 0.45 + heartbeatActivity * 0.25) *
+        coreVisibility *
+        glowEnterCurve *
+        CORE_GLOW_SPRITE_BRIGHTNESS,
     );
     this.coreGlow.scale.setScalar(
       (2.0 + coreGlow * 1.0 + processingBoost * 0.8 + heartbeatActivity * 0.35) * (1 + enterCoreT * 0.5),
@@ -1698,7 +1757,7 @@ export class AutomationNetworkSceneController {
     }
 
     const filamentGlow = 0.4 + processingBoost * 0.6;
-    const coreFilamentColor = this.statusDarkColor.clone().lerp(this.hotColor, filamentGlow);
+    const coreFilamentColor = this.scratchColor.copy(this.statusDarkColor).lerp(this.hotColor, filamentGlow);
     const coreFilamentOpacity =
       (CORE_FILAMENT_IDLE_OPACITY + (CORE_FILAMENT_PROCESSING_OPACITY - CORE_FILAMENT_IDLE_OPACITY) * processingBoost) *
       coreVisibility;
@@ -1783,8 +1842,8 @@ export class AutomationNetworkSceneController {
       node.stemMaterial.uniforms.uColorMix.value = displayEnergy;
       node.stemMaterial.uniforms.uPulseActivity.value = pulse;
 
-      const orbitEmissive = this.fgMutedColor
-        .clone()
+      const orbitEmissive = this.scratchColor
+        .copy(this.fgMutedColor)
         .lerp(this.accentColor, displayEnergy)
         .multiplyScalar(node.colorVariation);
       node.orbitInnerMaterial.uniforms.uColor.value.copy(orbitEmissive);
@@ -1808,7 +1867,7 @@ export class AutomationNetworkSceneController {
         NODE_GLOW_IDLE_OPACITY + (NODE_GLOW_ACTIVE_OPACITY - NODE_GLOW_IDLE_OPACITY) * displayEnergy;
 
       if (this.onFrame && rect) {
-        const projected = node.group.position.clone().project(this.camera);
+        const projected = this.scratchVec3.copy(node.group.position).project(this.camera);
         const behindCamera = projected.z > 1;
         labelPositions.push({
           id: node.id,
@@ -1819,12 +1878,15 @@ export class AutomationNetworkSceneController {
       }
     });
 
-    this.connections.forEach((connection, i) => {
+    this.connections.forEach((connection) => {
       const node = this.nodesById.get(connection.nodeId);
       if (!node) return;
-      this.updateConnectionTube(connection, node.group.position);
+      if (connection.lastTubeTarget.distanceToSquared(node.group.position) > CONNECTION_REBUILD_EPSILON_SQ) {
+        this.updateConnectionTube(connection, node.group.position);
+        connection.lastTubeTarget.copy(node.group.position);
+      }
 
-      const draw = sampleConnectionDraw(progress, i, this.connections.length) * sceneContentOpacity;
+      const draw = sampleConnectionDraw(progress) * sceneContentOpacity;
 
       let signalHead = 0;
       let signalDir = 1;
