@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { CallModal } from "@/components/call-modal";
 import { LangSwitcher } from "@/components/lang-switcher";
-import { PaletteSwitcher, PaletteSwitcherMobile } from "@/components/palette-switcher";
 import type { Site, Ui } from "@/content/types";
 import type { Locale } from "@/lib/lang";
 
@@ -16,11 +15,10 @@ interface HeaderProps {
   brand: Site["brand"];
   locale: Locale;
   a11y: Ui["a11y"];
-  palette: Ui["palette"];
   calendar: Site["contact"]["calendar"];
 }
 
-export function Header({ nav, brand, locale, a11y, palette, calendar }: HeaderProps) {
+export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [open, setOpen] = React.useState(false);
@@ -79,7 +77,6 @@ export function Header({ nav, brand, locale, a11y, palette, calendar }: HeaderPr
 
         <div className="flex items-center gap-2">
           <LangSwitcher locale={locale} label={a11y.language} className="hidden sm:flex" />
-          <PaletteSwitcher label={palette.label} names={palette.names} className="hidden sm:flex" />
           <CallModal
             label={nav.cta.label}
             calendar={calendar}
@@ -146,11 +143,6 @@ export function Header({ nav, brand, locale, a11y, palette, calendar }: HeaderPr
                   label={a11y.language}
                   className="justify-center sm:hidden"
                   onNavigate={() => setOpen(false)}
-                />
-                <PaletteSwitcherMobile
-                  label={palette.label}
-                  names={palette.names}
-                  className="sm:hidden"
                 />
               </div>
             </div>

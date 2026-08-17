@@ -312,17 +312,6 @@ export interface Ui {
     close: string;
     agents: string;
   };
-  palette: {
-    label: string;
-    names: {
-      ember: string;
-      paper: string;
-      cobalt: string;
-      crimson: string;
-      solar: string;
-      monochrome: string;
-    };
-  };
   pricing: {
     recommended: string;
   };
