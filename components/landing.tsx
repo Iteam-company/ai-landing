@@ -24,7 +24,6 @@ export function Landing({ locale }: { locale: Locale }) {
         brand={site.brand}
         locale={locale}
         a11y={ui.a11y}
-        palette={ui.palette}
         calendar={site.contact.calendar}
       />
       <main className="grain relative">

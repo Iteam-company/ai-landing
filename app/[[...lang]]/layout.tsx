@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import "../globals.css";
-import { resolvePalette, PALETTE_STORAGE_KEY, SWITCHER_PALETTES } from "@/lib/palettes";
+import { resolvePalette } from "@/lib/palettes";
 import { PalettePreview } from "@/components/palette-preview";
 import { getContent } from "@/content";
 import { fontVariables } from "@/app/fonts";
@@ -79,12 +79,6 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-bg text-fg">
-        <script
-          suppressHydrationWarning
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k=${JSON.stringify(PALETTE_STORAGE_KEY)},v=localStorage.getItem(k);if(v&&${JSON.stringify(SWITCHER_PALETTES)}.indexOf(v)>-1){document.documentElement.dataset.palette=v;}}catch(e){}})();`,
-          }}
-        />
         <PalettePreview />
         {children}
       </body>
