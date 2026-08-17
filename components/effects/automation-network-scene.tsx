@@ -16,6 +16,41 @@ const HEADER_ELEMENT_ID = "site-header";
 const WORKFLOW_STEP_INTERVAL_MS = 1100;
 const DETAIL_CARD_OFFSET_Y = 54;
 
+const DOM_SYNC_OPACITY_EPSILON = 0.004;
+const DOM_SYNC_POSITION_EPSILON_PX = 0.4;
+
+interface DomSyncCache {
+  labelX: Record<string, number>;
+  labelY: Record<string, number>;
+  labelOpacity: Record<string, number>;
+  actionOpacity: Record<string, number>;
+  processingOpacity: number[];
+  completeOpacity: number | null;
+  canvasOpacity: number | null;
+  cardX: number | null;
+  cardY: number | null;
+  cardOpacity: number | null;
+}
+
+function createDomSyncCache(): DomSyncCache {
+  return {
+    labelX: {},
+    labelY: {},
+    labelOpacity: {},
+    actionOpacity: {},
+    processingOpacity: [],
+    completeOpacity: null,
+    canvasOpacity: null,
+    cardX: null,
+    cardY: null,
+    cardOpacity: null,
+  };
+}
+
+function changed(previous: number | null | undefined, next: number, epsilon: number): boolean {
+  return previous == null || Math.abs(previous - next) > epsilon;
+}
+
 export interface AutomationNetworkNodeContent {
   id: string;
   label: string;
@@ -97,6 +132,7 @@ export function AutomationNetworkScene({
   const completeRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<AutomationNetworkSceneController | null>(null);
+  const domSyncCacheRef = useRef<DomSyncCache>(createDomSyncCache());
 
   const dimLightfallWrapRef = useRef<HTMLDivElement | null>(null);
   const backdropRef = useRef<HTMLDivElement | null>(null);
@@ -133,40 +169,69 @@ export function AutomationNetworkScene({
     const container = containerRef.current;
     if (!container) return;
 
+    domSyncCacheRef.current = createDomSyncCache();
     const controller = new AutomationNetworkSceneController(container, {
       nodes,
       reduceMotion: !!reduce,
       onFrame: (state: AutomationNetworkFrameState) => {
+        const cache = domSyncCacheRef.current;
         const activeId = hoveredNodeIdRef.current;
         const dimOthers = isMobile && activeId != null;
         state.labels.forEach((p) => {
           const el = labelRefs.current[p.id];
           if (!el) return;
-          el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
           const dim = dimOthers && activeId !== p.id ? 0.35 : 1;
-          el.style.opacity = String(p.opacity * dim);
+          const opacity = p.opacity * dim;
+          if (changed(cache.labelX[p.id], p.x, DOM_SYNC_POSITION_EPSILON_PX) || changed(cache.labelY[p.id], p.y, DOM_SYNC_POSITION_EPSILON_PX)) {
+            el.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
+            cache.labelX[p.id] = p.x;
+            cache.labelY[p.id] = p.y;
+          }
+          if (changed(cache.labelOpacity[p.id], opacity, DOM_SYNC_OPACITY_EPSILON)) {
+            el.style.opacity = String(opacity);
+            cache.labelOpacity[p.id] = opacity;
+          }
         });
         Object.entries(state.actionStatusOpacities).forEach(([nodeId, opacity]) => {
           const el = actionStatusRefs.current[nodeId];
-          if (el) el.style.opacity = String(opacity);
+          if (!el || !changed(cache.actionOpacity[nodeId], opacity, DOM_SYNC_OPACITY_EPSILON)) return;
+          el.style.opacity = String(opacity);
+          cache.actionOpacity[nodeId] = opacity;
         });
         state.processingStatusOpacities.forEach((opacity, i) => {
           const el = processingStatusRefs.current[i];
-          if (el) el.style.opacity = String(opacity);
+          if (!el || !changed(cache.processingOpacity[i], opacity, DOM_SYNC_OPACITY_EPSILON)) return;
+          el.style.opacity = String(opacity);
+          cache.processingOpacity[i] = opacity;
         });
-        if (completeRef.current) completeRef.current.style.opacity = String(state.completeOpacity);
+        if (completeRef.current && changed(cache.completeOpacity, state.completeOpacity, DOM_SYNC_OPACITY_EPSILON)) {
+          completeRef.current.style.opacity = String(state.completeOpacity);
+          cache.completeOpacity = state.completeOpacity;
+        }
 
         const canvasOpacity = 1 - state.canvasDissolveT;
-        if (containerRef.current) containerRef.current.style.opacity = String(canvasOpacity);
-        if (dimLightfallWrapRef.current) dimLightfallWrapRef.current.style.opacity = String(canvasOpacity);
-        if (backdropRef.current) backdropRef.current.style.opacity = String(canvasOpacity);
+        if (changed(cache.canvasOpacity, canvasOpacity, DOM_SYNC_OPACITY_EPSILON)) {
+          const canvasOpacityStr = String(canvasOpacity);
+          if (containerRef.current) containerRef.current.style.opacity = canvasOpacityStr;
+          if (dimLightfallWrapRef.current) dimLightfallWrapRef.current.style.opacity = canvasOpacityStr;
+          if (backdropRef.current) backdropRef.current.style.opacity = canvasOpacityStr;
+          cache.canvasOpacity = canvasOpacity;
+        }
 
         const hoveredId = hoveredNodeIdRef.current;
         if (hoveredId && cardRef.current) {
           const hoveredLabel = state.labels.find((p) => p.id === hoveredId);
           if (hoveredLabel) {
-            cardRef.current.style.transform = `translate3d(${hoveredLabel.x}px, ${hoveredLabel.y + DETAIL_CARD_OFFSET_Y}px, 0)`;
-            cardRef.current.style.opacity = String(hoveredLabel.opacity);
+            const cardY = hoveredLabel.y + DETAIL_CARD_OFFSET_Y;
+            if (changed(cache.cardX, hoveredLabel.x, DOM_SYNC_POSITION_EPSILON_PX) || changed(cache.cardY, cardY, DOM_SYNC_POSITION_EPSILON_PX)) {
+              cardRef.current.style.transform = `translate3d(${hoveredLabel.x}px, ${cardY}px, 0)`;
+              cache.cardX = hoveredLabel.x;
+              cache.cardY = cardY;
+            }
+            if (changed(cache.cardOpacity, hoveredLabel.opacity, DOM_SYNC_OPACITY_EPSILON)) {
+              cardRef.current.style.opacity = String(hoveredLabel.opacity);
+              cache.cardOpacity = hoveredLabel.opacity;
+            }
           }
         }
       },
