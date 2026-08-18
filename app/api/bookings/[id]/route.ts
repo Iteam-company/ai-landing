@@ -4,6 +4,7 @@ import { isAdmin } from "@/lib/auth";
 import { sendMail } from "@/lib/mailer";
 import { bookingConfirmedEmail } from "@/lib/emails";
 import { siteMeta } from "@/lib/site-meta";
+import { sendN8nEvent } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (status === "confirmed") {
     const doc = await col.findOne({ id }, { projection: { _id: 0 } });
     if (doc) {
+      // Best-effort — never throws, and a failure here must not affect the
+      // confirmation email below.
+      await sendN8nEvent({
+        event: "booking.confirmed",
+        bookingId: doc.id,
+        name: doc.name,
+        email: doc.email,
+        phone: doc.phone ?? "",
+        date: doc.date,
+        time: doc.time,
+        comment: doc.note ?? "",
+      });
+
       // Written in the language the visitor booked in (see BookingDoc.locale).
       await sendMail({
         to: doc.email,
