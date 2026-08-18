@@ -99,6 +99,12 @@ export const ui: Ui = {
       footer: "Need to reschedule? Just reply to this email.",
       meetCta: "Join Google Meet",
     },
+    bookingReminder: {
+      subject: "Your call starts in 1 hour — {brand}",
+      title: "Starting soon",
+      intro: "Just a reminder — your call starts in about an hour. Use the button below to join.",
+      footer: "Need to reschedule? Just reply to this email.",
+    },
     leadAdmin: {
       subject: "New lead from the website: {name}",
       title: "New lead from the website",

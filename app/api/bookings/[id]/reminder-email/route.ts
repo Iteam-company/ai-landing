@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { bookings } from "@/lib/mongo";
 import { sendMail } from "@/lib/mailer";
-import { bookingConfirmedEmail } from "@/lib/emails";
+import { bookingReminderEmail } from "@/lib/emails";
 import { siteMeta } from "@/lib/site-meta";
 
 export const dynamic = "force-dynamic";
@@ -14,12 +14,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const { id } = await params;
-  const body = await request.json().catch(() => ({}));
-  const meetUrl = typeof body.meetUrl === "string" ? body.meetUrl.trim() : "";
-  if (!meetUrl) {
-    return NextResponse.json({ error: "meetUrl is required." }, { status: 400 });
-  }
-
   const col = await bookings();
   const doc = await col.findOne({ id }, { projection: { _id: 0 } });
   if (!doc) {
@@ -28,16 +22,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (doc.status !== "confirmed") {
     return NextResponse.json({ error: "Booking is not confirmed." }, { status: 409 });
   }
-
-  // Persist the Meet link so the future reminder email can reuse it —
-  // doesn't touch status or the reminder timestamps.
-  await col.updateOne({ id }, { $set: { meetUrl } });
+  if (!doc.meetUrl) {
+    return NextResponse.json({ error: "Booking has no meetUrl yet." }, { status: 409 });
+  }
+  if (doc.clientReminderSentAt) {
+    return NextResponse.json({ error: "Client reminder already sent." }, { status: 409 });
+  }
 
   // Written in the language the visitor booked in (see BookingDoc.locale).
   const sent = await sendMail({
     to: doc.email,
-    ...bookingConfirmedEmail({ ...siteMeta(), locale: doc.locale, booking: doc, meetUrl }),
+    ...bookingReminderEmail({ ...siteMeta(), locale: doc.locale, booking: doc, meetUrl: doc.meetUrl }),
   });
 
-  return NextResponse.json({ ok: true, sent });
+  // Leave clientReminderSentAt unset on failure so n8n can retry later.
+  if (!sent) {
+    return NextResponse.json({ ok: true, sent: false });
+  }
+
+  const clientReminderSentAt = new Date().toISOString();
+  await col.updateOne({ id }, { $set: { clientReminderSentAt } });
+
+  return NextResponse.json({ ok: true, sent: true, clientReminderSentAt });
 }
