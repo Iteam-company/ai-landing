@@ -22,6 +22,12 @@ export interface BookingDoc {
   /** Language the visitor booked in — used for the confirmation email. */
   locale?: Locale;
   createdAt: string;
+  /** Google Meet link, set by the n8n confirmation callback once created. */
+  meetUrl?: string;
+  /** Client reminder email successfully sent. */
+  clientReminderSentAt?: string;
+  /** Internal Telegram reminder successfully sent. */
+  teamReminderSentAt?: string;
 }
 
 export interface CustomerDoc {

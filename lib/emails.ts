@@ -193,6 +193,29 @@ export function bookingConfirmedEmail({
   };
 }
 
+/** Sent ~1 hour before the call, once n8n's Schedule Trigger picks it up. Requires meetUrl — no reminder without a Meet link. */
+export function bookingReminderEmail({
+  brand,
+  accent,
+  locale = DEFAULT_LOCALE,
+  booking,
+  meetUrl,
+}: BookingEmail & { meetUrl: string }): { subject: string; html: string } {
+  const t = getUi(locale).emails;
+  return {
+    subject: fill(t.bookingReminder.subject, { brand }),
+    html: shell({
+      brand,
+      accent,
+      title: t.bookingReminder.title,
+      intro: t.bookingReminder.intro,
+      details: rows(booking, t.fields),
+      footer: fill(t.bookingReminder.footer, { brand }),
+      cta: { label: t.bookingConfirmed.meetCta, href: meetUrl },
+    }),
+  };
+}
+
 /** Admin notification for a conversion-zone form submission. */
 export function leadAdminEmail({
   brand,

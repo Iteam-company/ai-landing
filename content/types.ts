@@ -393,6 +393,7 @@ export interface Ui {
       footer: string;
       meetCta: string;
     };
+    bookingReminder: { subject: string; title: string; intro: string; footer: string };
     leadAdmin: { subject: string; title: string; intro: string; footer: string };
   };
 }
