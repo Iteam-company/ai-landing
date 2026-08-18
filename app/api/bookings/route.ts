@@ -6,6 +6,7 @@ import { sendMail } from "@/lib/mailer";
 import { bookingCustomerEmail, bookingAdminEmail } from "@/lib/emails";
 import { siteMeta } from "@/lib/site-meta";
 import { requestLocale } from "@/lib/lang";
+import { sendN8nEvent } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,19 @@ export async function POST(request: Request) {
   };
 
   await (await bookings()).insertOne(doc);
+
+  // Fire the booking.created event at n8n. Best-effort — never throws, and a
+  // failure here must not affect the booking (already saved) or the emails below.
+  await sendN8nEvent({
+    event: "booking.created",
+    bookingId: doc.id,
+    name: doc.name,
+    email: doc.email,
+    phone: doc.phone ?? "",
+    date: doc.date,
+    time: doc.time,
+    comment: doc.note ?? "",
+  });
 
   // Theme-matched notifications (no-op when SMTP isn't configured). The visitor
   // gets their own language; the agency gets the site's default one.
