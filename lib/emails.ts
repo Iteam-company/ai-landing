@@ -40,6 +40,11 @@ type BookingEmail = Theme & { booking: EmailBooking };
 
 type Fields = Ui["emails"]["fields"];
 
+interface Cta {
+  label: string;
+  href: string;
+}
+
 function rows(b: EmailBooking, f: Fields): [string, string][] {
   return [
     [f.when, `${b.date} · ${b.time}`],
@@ -58,6 +63,7 @@ function shell({
   intro,
   details,
   footer,
+  cta,
 }: {
   brand: string;
   accent: string;
@@ -65,6 +71,7 @@ function shell({
   intro: string;
   details: [string, string][];
   footer: string;
+  cta?: Cta;
 }): string {
   const detailRows = details
     .map(
@@ -75,6 +82,15 @@ function shell({
         </tr>`,
     )
     .join("");
+
+  // Table-based button — email clients strip <style>, so all sizing/color is inline.
+  const ctaBlock = cta
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 0">
+        <tr><td style="border-radius:10px;background:${accent}">
+          <a href="${escapeHtml(cta.href)}" style="display:inline-block;padding:12px 24px;font-size:14px;font-weight:600;color:#0a0b0f;text-decoration:none;border-radius:10px">${escapeHtml(cta.label)}</a>
+        </td></tr>
+      </table>`
+    : "";
 
   return `<!doctype html>
 <html><body style="margin:0;background:#0a0b0f;padding:28px 16px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
@@ -91,6 +107,7 @@ function shell({
             style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:6px 16px">
             ${detailRows}
           </table>
+          ${ctaBlock}
           <p style="margin:22px 0 0;color:#6b6f68;font-size:12px;line-height:1.6">${escapeHtml(footer)}</p>
         </td></tr>
       </table>
@@ -157,17 +174,21 @@ export function bookingConfirmedEmail({
   accent,
   locale = DEFAULT_LOCALE,
   booking,
-}: BookingEmail): { subject: string; html: string } {
+  meetUrl,
+}: BookingEmail & { meetUrl?: string }): { subject: string; html: string } {
   const t = getUi(locale).emails;
+  const trimmedMeetUrl = meetUrl?.trim();
+  const cta = trimmedMeetUrl ? { label: t.bookingConfirmed.meetCta, href: trimmedMeetUrl } : undefined;
   return {
     subject: fill(t.bookingConfirmed.subject, { brand }),
     html: shell({
       brand,
       accent,
       title: t.bookingConfirmed.title,
-      intro: t.bookingConfirmed.intro,
+      intro: cta ? t.bookingConfirmed.introWithMeet : t.bookingConfirmed.intro,
       details: rows(booking, t.fields),
       footer: fill(t.bookingConfirmed.footer, { brand }),
+      cta,
     }),
   };
 }

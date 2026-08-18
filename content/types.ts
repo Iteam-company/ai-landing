@@ -383,7 +383,16 @@ export interface Ui {
     };
     bookingCustomer: { subject: string; title: string; intro: string; footer: string };
     bookingAdmin: { subject: string; title: string; intro: string; footer: string };
-    bookingConfirmed: { subject: string; title: string; intro: string; footer: string };
+    bookingConfirmed: {
+      subject: string;
+      title: string;
+      /** No Meet link yet / fallback. */
+      intro: string;
+      /** Shown when the email includes the "Join Google Meet" button. */
+      introWithMeet: string;
+      footer: string;
+      meetCta: string;
+    };
     leadAdmin: { subject: string; title: string; intro: string; footer: string };
   };
 }
