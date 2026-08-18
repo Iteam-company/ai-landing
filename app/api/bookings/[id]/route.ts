@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { bookings } from "@/lib/mongo";
 import { isAdmin } from "@/lib/auth";
-import { sendMail } from "@/lib/mailer";
-import { bookingConfirmedEmail } from "@/lib/emails";
-import { siteMeta } from "@/lib/site-meta";
 import { sendN8nEvent } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
@@ -26,12 +23,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const res = await col.updateOne({ id }, { $set: { status } });
   if (!res.matchedCount) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  // Email the customer when their booking is confirmed (no-op without SMTP).
+  // Notify n8n when a booking is confirmed. It creates the Google Calendar
+  // event/Meet link and calls back POST .../confirmation-email with the
+  // meetUrl once ready — the branded confirmation email is sent from there,
+  // not here, since the Meet link doesn't exist yet at this point.
   if (status === "confirmed") {
     const doc = await col.findOne({ id }, { projection: { _id: 0 } });
     if (doc) {
-      // Best-effort — never throws, and a failure here must not affect the
-      // confirmation email below.
+      // Best-effort — never throws.
       await sendN8nEvent({
         event: "booking.confirmed",
         bookingId: doc.id,
@@ -41,12 +40,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         date: doc.date,
         time: doc.time,
         comment: doc.note ?? "",
-      });
-
-      // Written in the language the visitor booked in (see BookingDoc.locale).
-      await sendMail({
-        to: doc.email,
-        ...bookingConfirmedEmail({ ...siteMeta(), locale: doc.locale, booking: doc }),
       });
     }
   }

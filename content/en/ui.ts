@@ -94,8 +94,10 @@ export const ui: Ui = {
     bookingConfirmed: {
       subject: "Call confirmed — {brand}",
       title: "Call confirmed",
-      intro: "Your call is confirmed — the meeting link will arrive in a separate email. Talk soon!",
+      intro: "Your call is confirmed. We'll see you at the scheduled time. Talk soon!",
+      introWithMeet: "Your call is confirmed. Use the button below to join the meeting at the scheduled time. Talk soon!",
       footer: "Need to reschedule? Just reply to this email.",
+      meetCta: "Join Google Meet",
     },
     leadAdmin: {
       subject: "New lead from the website: {name}",
