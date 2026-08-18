@@ -51,6 +51,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
   }
 
+  if (status === "cancelled") {
+    const doc = await col.findOne({ id }, { projection: { _id: 0 } });
+    if (doc) {
+      // Best-effort — never throws. No cancellation email — none exists yet.
+      await sendN8nEvent({
+        event: "booking.cancelled",
+        bookingId: doc.id,
+        name: doc.name,
+        email: doc.email,
+        phone: doc.phone ?? "",
+        date: doc.date,
+        time: doc.time,
+        comment: doc.note ?? "",
+      });
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 
