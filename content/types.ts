@@ -185,7 +185,6 @@ export interface Site {
     ogImage: string;
   };
   brand: {
-    monogram: string;
     name: string;
     suffix: string;
   };

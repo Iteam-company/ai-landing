@@ -9,9 +9,10 @@ import type { Site } from "@/content/types";
 interface AutomationNetworkProps {
   content: Site["automationNetwork"];
   onRevealChange?: (revealed: boolean) => void;
+  onPreparedChange?: (prepared: boolean) => void;
 }
 
-export function AutomationNetwork({ content, onRevealChange }: AutomationNetworkProps) {
+export function AutomationNetwork({ content, onRevealChange, onPreparedChange }: AutomationNetworkProps) {
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -35,6 +36,7 @@ export function AutomationNetwork({ content, onRevealChange }: AutomationNetwork
           intro={content.intro}
           isMobile={isMobile}
           onRevealChange={onRevealChange}
+          onPreparedChange={onPreparedChange}
           className="absolute inset-0"
         />
       </div>

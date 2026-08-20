@@ -1,5 +1,6 @@
 
 import * as THREE from "three";
+import { markPhaseTransition } from "./dev-perf-marks";
 import {
   CHAOS_POSITIONS,
   ASSEMBLED_POSITIONS,
@@ -30,6 +31,7 @@ import {
   sampleEnterCoreT,
   sampleCanvasDissolveT,
   isHoverPhaseActive,
+  isHeroPrepared,
 } from "./timeline";
 
 export interface AutomationNetworkNodeInput {
@@ -49,6 +51,7 @@ export interface AutomationNetworkFrameState {
   actionStatusOpacities: Record<string, number>;
   completeOpacity: number;
   canvasDissolveT: number;
+  heroPrepared: boolean;
 }
 
 interface SceneControllerOptions {
@@ -78,6 +81,7 @@ interface NodeRig {
 
 interface ConnectionRig {
   nodeId: string;
+  mesh: THREE.Mesh;
   geometry: THREE.BufferGeometry;
   material: THREE.ShaderMaterial;
   turns: number;
@@ -129,6 +133,38 @@ const CONNECTION_HOVER_OUT_TIME_CONSTANT = 0.24;
 
 const CONNECTION_REBUILD_EPSILON = 0.0025;
 const CONNECTION_REBUILD_EPSILON_SQ = CONNECTION_REBUILD_EPSILON * CONNECTION_REBUILD_EPSILON;
+
+// During ASSEMBLY all 5 nodes move every frame, so all 5 connections cross
+// the rebuild epsilon in the same frame — a real per-frame spike (the
+// tube's ring/radial loop + curve sampling, ~200 iterations each). Capping
+// how many rebuild per frame and round-robining the rest spreads that cost
+// over 2-3 frames instead of paying for it all at once; a connection left
+// over this frame just stays "dirty" and gets it on the next one, so
+// nothing is ever silently skipped, only delayed by a frame or two — far
+// below what's visible on a thin trailing tube. Node transforms themselves
+// are never touched by this, so they stay perfectly smooth regardless.
+const CONNECTION_REBUILD_MAX_PER_FRAME = 2;
+
+// Stable (non-Frenet) tube frame: a fixed reference axis crossed with the
+// local tangent, chosen once per connection so the basis never flips mid-tube.
+// Cheap (no parallel-transport state, no per-ring allocation) and visually
+// equivalent here because each connection is a single mild bow, never a
+// looping curve where Frenet's twist-minimization would matter.
+const TUBE_FRAME_REFERENCE_UP = new THREE.Vector3(0, 1, 0);
+const TUBE_FRAME_REFERENCE_RIGHT = new THREE.Vector3(1, 0, 0);
+const TUBE_TANGENT_SAMPLE_EPS = 0.0008;
+
+// Scroll-progress smoothing: raw scroll input is the target, the value the
+// timeline actually samples chases it with frame-rate independent damping.
+// ~90ms time constant reads as "caught up" within ~150-250ms without adding
+// perceptible inertia.
+const PROGRESS_SMOOTHING_TIME_CONSTANT = 0.09;
+
+// Below this, node meshes are already scaled to a sliver (see
+// sceneContentOpacity below) and connections/particles are practically
+// invisible — stop updating/rendering them rather than paying for motion
+// nobody can see during the ENTER CORE close-up.
+const SCENE_CONTENT_HIDE_THRESHOLD = 0.02;
 
 const CORE_HOT_RADIUS = 0.22;
 const DESKTOP_CORE_HOT_DETAIL = 4;
@@ -219,6 +255,45 @@ const CORE_SHOCKWAVE_PERIOD = 1.35;
 const CORE_SHOCKWAVE_MIN_SCALE = 0.55;
 const CORE_SHOCKWAVE_MAX_SCALE = 1.65;
 const CORE_SHOCKWAVE_MAX_OPACITY = 0.3;
+
+// Past this point in ENTER CORE the camera is inside coreShell — only there
+// does it need DoubleSide. Numerically sampled the real camera-distance and
+// shell-radius curves (CAMERA_POSITION_TRACK / CORE_SCALE_TRACK, both
+// smoothstep-eased) against each other: they cross at enterCoreT ≈ 0.81,
+// so this is already essentially the earliest-safe value, not one with
+// margin to spare — don't push it later without re-checking that crossover.
+const CORE_SHELL_DOUBLE_SIDE_THRESHOLD = 0.82;
+
+// Screen-space coverage (not triangle count) is what makes the last stretch
+// of ENTER CORE expensive — the plasma shell alone is DoubleSide (2x
+// fragment cost) and close to filling the viewport by this point. A small
+// DPR drop directly cuts fragment-shader invocations across the whole
+// canvas for exactly this window; it's soft, blurry, glow-heavy content
+// with no fine edges, so the resolution drop reads as essentially nothing.
+// Two discrete tiers (never a continuous curve, so setPixelRatio only ever
+// runs on the two frames where a tier boundary is actually crossed): a
+// mild early softening while the Core is still growing into frame, then a
+// stronger drop for the final stretch. Tier 2 reuses the DoubleSide
+// threshold so "expensive rendering window" and "reduced-resolution
+// window" stay the same window instead of two independently-tuned ones.
+const CORE_DPR_TIER1_THRESHOLD = 0.72;
+const CORE_DPR_TIER1_SCALE = 0.92;
+const LATE_CORE_QUALITY_THRESHOLD = CORE_SHELL_DOUBLE_SIDE_THRESHOLD;
+const LATE_CORE_DPR_SCALE = 0.85;
+
+// Secondary Core layers (orbit rings, filaments) stop adding anything
+// visible once the hot sphere/plasma shell dominate the whole viewport —
+// fade them out (and stop drawing them entirely once invisible) over the
+// last stretch of ENTER CORE instead of paying full overdraw for them
+// right up to the end.
+const CORE_SECONDARY_FADE_START = 0.72;
+const CORE_SECONDARY_FADE_END = 0.94;
+
+// Glow sprite keeps growing on screen purely from camera proximity — cap
+// how far its size keeps scaling up so it doesn't balloon into a full-screen
+// additive layer at the very end, when it's barely contributing next to the
+// hot sphere/shell.
+const CORE_GLOW_SCALE_ENTER_CAP = 0.7;
 
 const HEARTBEAT_PERIOD = 6.5;
 const HEARTBEAT_ACTIVE_FRACTION = 0.22;
@@ -490,10 +565,18 @@ function smoothstepJs(edge0: number, edge1: number, x: number): number {
   return t * t * (3 - 2 * t);
 }
 
+const DAMP_SNAP_EPSILON = 1e-4;
+
 function dampTowards(current: number, target: number, deltaSeconds: number, timeConstantSeconds: number): number {
   if (timeConstantSeconds <= 0 || deltaSeconds <= 0) return target;
   const amount = 1 - Math.exp(-deltaSeconds / timeConstantSeconds);
-  return current + (target - current) * amount;
+  const next = current + (target - current) * amount;
+  // Exponential decay only ever asymptotically approaches the target, so
+  // without this a value like canvas-dissolve progress can sit at
+  // 0.99999...-something forever instead of ever reading as exactly done —
+  // which left renderFrame's `>= 1` full-stop waiting several extra seconds
+  // to trigger after the scene was already visually finished.
+  return Math.abs(target - next) < DAMP_SNAP_EPSILON ? target : next;
 }
 
 const CONNECTION_VERTEX_SHADER = `
@@ -836,6 +919,14 @@ function buildPlasmaOrbMaterial(
       uNoiseAmp: { value: noiseAmp },
     },
     transparent: true,
+    // Transparent material with Three.js's default depth-sort-by-object
+    // (not per-fragment) — leaving depthWrite:true here blocks the other
+    // transparent layers drawn after it (coreShell, coreGlow, orbit rings,
+    // atmosphereInner, node glow sprites) from correctly blending behind
+    // it. depthWrite:false is the conventional choice for transparent
+    // materials for exactly this reason; depth *testing* against opaque
+    // geometry (node bodies) is untouched.
+    depthWrite: false,
   });
 }
 
@@ -891,7 +982,14 @@ function buildPlasmaShellMaterial(colorCore: THREE.Color, colorEdge: THREE.Color
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
+    // FrontSide until renderFrame switches this to DoubleSide right at the
+    // tail of ENTER CORE, when the camera is actually about to end up
+    // inside the shell — for the rest of the site (including most of ENTER
+    // CORE, while the camera is still outside it) DoubleSide would shade
+    // both the near and far faces of every covered pixel for no visible
+    // difference, doubling fill-rate on what's already the biggest
+    // translucent layer on screen.
+    side: THREE.FrontSide,
   });
 }
 
@@ -1084,16 +1182,57 @@ export class AutomationNetworkSceneController {
   private readonly scratchColor = new THREE.Color();
   private readonly scratchVec3 = new THREE.Vector3();
 
+  // Scratch for the allocation-free tube frame computation (see
+  // updateConnectionTube) — reused across rings and connections since each
+  // call fully consumes them before returning.
+  private readonly tubeScratchPoint = new THREE.Vector3();
+  private readonly tubeScratchTangentA = new THREE.Vector3();
+  private readonly tubeScratchTangentB = new THREE.Vector3();
+  private readonly tubeScratchNormal = new THREE.Vector3();
+  private readonly tubeScratchBinormal = new THREE.Vector3();
+
   private hoveredNodeId: string | null = null;
 
   private progress = 0;
+  private targetProgress = 0;
+  private sceneContentVisible = true;
+  private coreShellDoubleSide = false;
+  private coreDprTier = 0;
+  private baseDpr = 1;
+  private coreShockwaveVisible = true;
+  private coreSecondaryVisible = true;
+  private atmosphereInnerVisible = true;
+  private connectionRebuildCursor = 0;
+
+  // Reused every frame instead of allocating a fresh array/object each
+  // time — onFrame's consumer only ever reads these synchronously within
+  // the callback, never retains them across frames.
+  private readonly processingStatusOpacitiesBuf: number[] = new Array(PROCESSING_STATUS_COUNT).fill(0);
+  private readonly actionStatusOpacitiesBuf: Record<string, number> = Object.fromEntries(
+    ACTION_NODE_IDS.map((id) => [id, 0]),
+  );
   private reduceMotion: boolean;
   private flowTime = 0;
+  // Advances by real elapsed time exactly like flowTime, except it stops
+  // accumulating for the whole ENTER CORE fly-in (see secondaryIdleFrozen in
+  // renderFrame) — node idle sway/orbit-spin read off this instead of the
+  // live clock so they hold their exact last phase (no snap either way)
+  // instead of continuing to animate through a stretch of scroll where the
+  // camera is moving too fast for that idle motion to register anyway.
+  private secondaryIdleClock = 0;
   private running = false;
   private rafId: number | null = null;
   private lastFrameTime: number | null = null;
   private resizeObserver: ResizeObserver;
   private onFrame?: (state: AutomationNetworkFrameState) => void;
+
+  // Cached in resize() (which already reads the rect) instead of calling
+  // getBoundingClientRect() every frame — that read forces a synchronous
+  // layout whenever the previous frame's label DOM writes (onFrame) are
+  // still pending, a per-frame layout-thrash that showed up as a real cost
+  // under profiling.
+  private containerWidth = 1;
+  private containerHeight = 1;
 
   private cameraDistanceMultiplier = 1;
   private coreSizeMultiplier = 1;
@@ -1122,6 +1261,7 @@ export class AutomationNetworkSceneController {
     });
     const dprCap = isCompactTier ? COMPACT_DPR_CAP : DESKTOP_DPR_CAP;
     const dpr = options.dpr ?? Math.min(window.devicePixelRatio || 1, dprCap);
+    this.baseDpr = dpr;
     this.renderer.setPixelRatio(dpr);
     this.renderer.setClearColor(0x000000, 0);
     const canvas = this.renderer.domElement;
@@ -1404,6 +1544,7 @@ export class AutomationNetworkSceneController {
 
       this.connections.push({
         nodeId: node.id,
+        mesh,
         geometry,
         material,
         turns,
@@ -1447,11 +1588,49 @@ export class AutomationNetworkSceneController {
     this.resizeObserver.observe(container);
     this.resize();
     this.renderFrame(0);
+    this.warmUpCoreShellDoubleSide();
+  }
+
+  // coreShellMaterial starts (and spends nearly the whole site) on
+  // FrontSide, only switching to DoubleSide for the last stretch of ENTER
+  // CORE (see renderFrame). Three.js keys its shader program cache on
+  // material.side (DoubleSide injects `#define DOUBLE_SIDED`), so that
+  // switch would otherwise compile a brand-new program the first time it
+  // happens — right in the middle of the close-up. Compiling it now, at
+  // scene setup, moves that cost to a moment nobody is looking at the
+  // result, so the later switch just selects an already-linked program.
+  //
+  // Deliberately the synchronous renderer.compile(), not compileAsync():
+  // the async version only exists to let a caller await program *linking*
+  // via the KHR_parallel_shader_compile extension, but we never read its
+  // result (fire-and-forget) and Three.js already treats every program as
+  // immediately "ready" when that extension is absent — so compileAsync
+  // buys nothing here beyond an extra Promise and a background setTimeout
+  // poll loop. That poll loop closes over this constructor call's materials
+  // and keeps running after this method returns; if dispose() (e.g. React
+  // Strict Mode's mount/unmount/remount in dev) tears down coreShellMaterial
+  // before the poll's next tick, Three.js's internal properties map for it
+  // is gone and the loop throws a raw, uncaught "Cannot read properties of
+  // undefined (reading 'isReady')" from inside its own setTimeout — a
+  // startup race, not anything about our scene being broken. compile() does
+  // the same getProgram()/glCompileShader work synchronously and returns,
+  // so there's no pending async work left to race a fast unmount.
+  private warmUpCoreShellDoubleSide() {
+    const material = this.coreShellMaterial;
+    const originalSide = material.side;
+    material.side = THREE.DoubleSide;
+    this.renderer.compile(this.scene, this.camera);
+    material.side = originalSide;
   }
 
   setProgress(value: number) {
-    this.progress = value;
-    if (!this.running) this.renderFrame(0);
+    this.targetProgress = value;
+    if (!this.running) {
+      // No RAF driving the damping loop (paused/off-screen) — snap so the
+      // scene stays correct while stopped instead of freezing mid-catch-up.
+      this.progress = value;
+      this.renderFrame(0);
+    }
   }
 
   setHoveredNode(id: string | null) {
@@ -1518,6 +1697,8 @@ export class AutomationNetworkSceneController {
     const rect = this.container.getBoundingClientRect();
     const width = Math.max(1, rect.width);
     const height = Math.max(1, rect.height);
+    this.containerWidth = width;
+    this.containerHeight = height;
     this.renderer.setSize(width, height, false);
 
     const anchor = resolveResponsiveAnchor(width);
@@ -1592,33 +1773,52 @@ export class AutomationNetworkSceneController {
     const curve = connection.curve;
     const ringCount = this.tubeRingCount;
     const radialSegments = this.tubeRadialSegments;
-    const points = curve.getPoints(ringCount - 1);
-    const frenet = curve.computeFrenetFrames(ringCount - 1, false);
+    const lastRing = ringCount - 1;
 
     const positionAttr = connection.geometry.getAttribute("position") as THREE.BufferAttribute;
     const normalAttr = connection.geometry.getAttribute("normal") as THREE.BufferAttribute;
     const twoPi = Math.PI * 2;
 
+    // A fixed reference axis crossed with the local tangent, picked once for
+    // the whole connection (never mid-loop) so the frame can't flip partway
+    // along the tube: swap to the X axis only when the connection runs
+    // close enough to vertical that Y would nearly cancel out.
+    const toLength = to.length() || 1;
+    const reference = Math.abs(to.y) / toLength > 0.9 ? TUBE_FRAME_REFERENCE_RIGHT : TUBE_FRAME_REFERENCE_UP;
+
+    const point = this.tubeScratchPoint;
+    const pA = this.tubeScratchTangentA;
+    const tangent = this.tubeScratchTangentB;
+    const normal = this.tubeScratchNormal;
+    const binormal = this.tubeScratchBinormal;
+
     for (let ring = 0; ring < ringCount; ring++) {
-      const p = points[ring];
-      const N = frenet.normals[ring];
-      const B = frenet.binormals[ring];
-      const alongT = ring / (ringCount - 1);
+      const alongT = ring / lastRing;
+      curve.getPoint(alongT, point);
+
+      const t1 = Math.max(0, alongT - TUBE_TANGENT_SAMPLE_EPS);
+      const t2 = Math.min(1, alongT + TUBE_TANGENT_SAMPLE_EPS);
+      curve.getPoint(t1, pA);
+      curve.getPoint(t2, tangent);
+      tangent.sub(pA).normalize();
+
+      normal.crossVectors(reference, tangent).normalize();
+      binormal.crossVectors(tangent, normal);
 
       for (let j = 0; j < radialSegments; j++) {
         const theta = (j / radialSegments) * twoPi;
         const cosT = Math.cos(theta);
         const sinT = Math.sin(theta);
-        const nx = N.x * cosT + B.x * sinT;
-        const ny = N.y * cosT + B.y * sinT;
-        const nz = N.z * cosT + B.z * sinT;
+        const nx = normal.x * cosT + binormal.x * sinT;
+        const ny = normal.y * cosT + binormal.y * sinT;
+        const nz = normal.z * cosT + binormal.z * sinT;
 
         const spiral = (alongT * connection.turns - j / radialSegments) * twoPi + connection.phaseOffset;
         const bulge = smoothstepJs(1 - HELIX_BAND_WIDTH, 1, Math.cos(spiral) * 0.5 + 0.5);
         const radius = TUBE_RADIUS * connection.radiusScale + HELIX_RADIUS * bulge;
 
         const idx = ring * radialSegments + j;
-        positionAttr.setXYZ(idx, p.x + nx * radius, p.y + ny * radius, p.z + nz * radius);
+        positionAttr.setXYZ(idx, point.x + nx * radius, point.y + ny * radius, point.z + nz * radius);
         normalAttr.setXYZ(idx, nx, ny, nz);
       }
     }
@@ -1627,7 +1827,6 @@ export class AutomationNetworkSceneController {
   }
 
   private renderFrame(time: number) {
-    const progress = this.progress;
     const t = time * 0.001;
     if (!this.reduceMotion) this.flowTime = t;
 
@@ -1639,22 +1838,72 @@ export class AutomationNetworkSceneController {
       this.lastFrameTime = time;
     }
 
+    // targetProgress -> damped this.progress: raw scroll stays the target,
+    // the timeline samples a value that chases it, so a single large wheel
+    // delta doesn't jump the scene straight to a new phase. dt<=0 (paused,
+    // or the very first frame) snaps instead of damping toward a stale
+    // starting value; reduced-motion always uses raw progress.
+    if (this.reduceMotion || hoverDt <= 0) {
+      this.progress = this.targetProgress;
+    } else {
+      this.progress = dampTowards(this.progress, this.targetProgress, hoverDt, PROGRESS_SMOOTHING_TIME_CONSTANT);
+    }
+    const progress = this.progress;
+
     const canvasDissolveT = sampleCanvasDissolveT(progress);
+    markPhaseTransition("canvas-dissolve", canvasDissolveT > 0 && canvasDissolveT < 1);
+    // Same damped `progress` canvasDissolveT itself uses — see isHeroPrepared's
+    // doc comment for why this is deliberately a separate, earlier signal
+    // from `revealed` (canvasDissolveT > 0) rather than reusing it.
+    const heroPrepared = isHeroPrepared(progress);
+    markPhaseTransition("hero-prepared", heroPrepared);
     if (canvasDissolveT >= 1) {
       if (this.onFrame) {
+        // Explicit zero for every known label, not an empty array — the
+        // caller's sync only writes opacity for ids it's told about, so an
+        // empty list leaves whatever opacity each label last had frozen in
+        // its inline style (invisible in the normal slow fade-out, but a
+        // stale fully-visible label can get stuck on top of Hero after a
+        // big/instant progress jump, e.g. with reduced motion).
+        const labels: LabelScreenPosition[] = this.nodes.map((node) => ({
+          id: node.id,
+          x: 0,
+          y: 0,
+          opacity: 0,
+        }));
         this.onFrame({
-          labels: [],
+          labels,
           processingStatusOpacities: new Array(PROCESSING_STATUS_COUNT).fill(0),
           actionStatusOpacities: Object.fromEntries(ACTION_NODE_IDS.map((id) => [id, 0])),
           completeOpacity: 0,
           canvasDissolveT,
+          heroPrepared,
         });
       }
+      // Fully dissolved and Hero has taken over — nothing here is visible,
+      // so stop scheduling frames entirely instead of leaving a RAF loop
+      // ticking a no-op forever. setProgress() restarts it the instant
+      // scroll moves back into visible territory.
+      if (this.running) this.stop();
       return;
     }
 
     const enterCoreT = sampleEnterCoreT(progress);
+    markPhaseTransition("enter-core", enterCoreT > 0);
     const sceneContentOpacity = 1 - enterCoreT;
+
+    // Node idle sway + orbit-ring spin are flavor motion nobody can actually
+    // track once the camera starts flying toward the Core — but every frame
+    // they still perturbed node.group.position by a fraction of a unit,
+    // which kept tripping the connection-tube rebuild epsilon (see
+    // CONNECTION_REBUILD_EPSILON below) even though nodes had long since
+    // finished their real (layoutT-driven) fly-in motion. Freezing just
+    // this secondary layer for the ENTER CORE window removes that
+    // per-frame ~200-iteration rebuild cost entirely without touching
+    // position/scale/opacity (the actual visible fly-in/fade) or the
+    // connection shader's own flow animation (still driven by flowTime).
+    const secondaryIdleFrozen = enterCoreT > 0;
+    if (!secondaryIdleFrozen) this.secondaryIdleClock += hoverDt;
     const motionProgress = this.reduceMotion ? Math.min(progress, PHASES.complete[1]) : progress;
     const detailReveal = Math.min(1, enterCoreT * 1.6);
 
@@ -1713,25 +1962,90 @@ export class AutomationNetworkSceneController {
     this.coreShellMaterial.uniforms.uNoiseSpeed.value = 0.12 + processingBoost * 0.3;
     this.coreShellMaterial.uniforms.uNoiseAmp.value = 0.35 + processingBoost * 0.4 + detailReveal * 0.25;
 
-    const coreOrbitEnergy = Math.min(1, coreGlow + processingBoost * 0.6);
+    // Only the very tail of ENTER CORE puts the camera inside the shell
+    // (verified against the camera/scale tracks) — DoubleSide is wasted
+    // fill-rate on the biggest translucent layer on screen everywhere else.
+    const wantsShellDoubleSide = enterCoreT >= CORE_SHELL_DOUBLE_SIDE_THRESHOLD;
+    markPhaseTransition("core-shell-doubleside", wantsShellDoubleSide);
+    if (wantsShellDoubleSide !== this.coreShellDoubleSide) {
+      this.coreShellDoubleSide = wantsShellDoubleSide;
+      this.coreShellMaterial.side = wantsShellDoubleSide ? THREE.DoubleSide : THREE.FrontSide;
+    }
 
-    const coreOrbitEmissive = this.scratchColor
-      .copy(this.fgMutedColor)
-      .lerp(this.accentColor, coreOrbitEnergy * CORE_ORBIT_EMISSIVE_RANGE);
-    const coreOrbitScale = coreScale * (1 + processingBoost * 0.06);
-    this.coreOrbits.forEach((orbit) => {
-      orbit.mesh.scale.setScalar(coreOrbitScale);
-      const u = orbit.material.uniforms;
-      u.uColor.value.copy(coreOrbitEmissive);
-      u.uOpacity.value = coreVisibility;
-      u.uTime.value = this.flowTime;
-      u.uPulseSpeed.value = orbit.config.pulseSpeed * (1 + processingBoost * 1.4);
-      if (!this.reduceMotion) {
-        const rate =
-          orbit.config.spinRateBase * (1 + processingBoost * CORE_PROCESSING_ROTATION_BOOST) * orbit.config.spinDirection;
-        orbit.mesh.rotation[orbit.config.spinAxis] += rate;
-      }
-    });
+    // Discrete DPR tier for exactly the expensive window above — never
+    // touched per frame, and setPixelRatio itself only reallocates the
+    // drawing buffer on the frames where the tier actually changes.
+    const wantsDprTier =
+      enterCoreT >= LATE_CORE_QUALITY_THRESHOLD ? 2 : enterCoreT >= CORE_DPR_TIER1_THRESHOLD ? 1 : 0;
+    markPhaseTransition("dpr-tier-0.72", wantsDprTier >= 1);
+    markPhaseTransition("dpr-tier-0.82", wantsDprTier >= 2);
+    if (wantsDprTier !== this.coreDprTier) {
+      this.coreDprTier = wantsDprTier;
+      const scale = wantsDprTier === 2 ? LATE_CORE_DPR_SCALE : wantsDprTier === 1 ? CORE_DPR_TIER1_SCALE : 1;
+      this.renderer.setPixelRatio(this.baseDpr * scale);
+    }
+
+    // Orbit rings and filaments read as fine surface detail — once the hot
+    // sphere/shell already fill most of the viewport near the end of ENTER
+    // CORE they're not visually contributing, so fade them out and stop
+    // drawing them entirely instead of paying full overdraw for them too.
+    const coreSecondaryFade = 1 - smoothstepJs(CORE_SECONDARY_FADE_START, CORE_SECONDARY_FADE_END, enterCoreT);
+    markPhaseTransition(
+      "core-secondary-fade",
+      enterCoreT >= CORE_SECONDARY_FADE_START && enterCoreT < CORE_SECONDARY_FADE_END,
+    );
+    const coreSecondaryVisible = coreSecondaryFade > 0.01;
+    if (coreSecondaryVisible !== this.coreSecondaryVisible) {
+      this.coreSecondaryVisible = coreSecondaryVisible;
+      this.coreOrbits.forEach((orbit) => {
+        orbit.mesh.visible = coreSecondaryVisible;
+      });
+      this.coreFilaments.forEach((filament) => {
+        filament.group.visible = coreSecondaryVisible;
+      });
+    }
+
+    if (coreSecondaryVisible) {
+      const coreOrbitEnergy = Math.min(1, coreGlow + processingBoost * 0.6);
+
+      const coreOrbitEmissive = this.scratchColor
+        .copy(this.fgMutedColor)
+        .lerp(this.accentColor, coreOrbitEnergy * CORE_ORBIT_EMISSIVE_RANGE);
+      const coreOrbitScale = coreScale * (1 + processingBoost * 0.06);
+      this.coreOrbits.forEach((orbit) => {
+        orbit.mesh.scale.setScalar(coreOrbitScale);
+        const u = orbit.material.uniforms;
+        u.uColor.value.copy(coreOrbitEmissive);
+        u.uOpacity.value = coreVisibility * coreSecondaryFade;
+        u.uTime.value = this.flowTime;
+        u.uPulseSpeed.value = orbit.config.pulseSpeed * (1 + processingBoost * 1.4);
+        if (!this.reduceMotion) {
+          const rate =
+            orbit.config.spinRateBase * (1 + processingBoost * CORE_PROCESSING_ROTATION_BOOST) * orbit.config.spinDirection;
+          orbit.mesh.rotation[orbit.config.spinAxis] += rate;
+        }
+      });
+
+      const filamentGlow = 0.4 + processingBoost * 0.6;
+      const coreFilamentColor = this.scratchColor.copy(this.statusDarkColor).lerp(this.hotColor, filamentGlow);
+      const coreFilamentOpacity =
+        (CORE_FILAMENT_IDLE_OPACITY + (CORE_FILAMENT_PROCESSING_OPACITY - CORE_FILAMENT_IDLE_OPACITY) * processingBoost) *
+        coreVisibility *
+        coreSecondaryFade;
+      this.coreFilaments.forEach((filament) => {
+        const radius = filament.idleRadius + (CORE_FILAMENT_RADIUS - filament.idleRadius) * processingBoost;
+        filament.group.scale.setScalar(radius * coreScale);
+        filament.group.rotation.x = filament.idleTiltX + (CORE_FILAMENT_ORGANIZED_TILT[0] - filament.idleTiltX) * processingBoost;
+        filament.group.rotation.y = filament.idleTiltY + (CORE_FILAMENT_ORGANIZED_TILT[1] - filament.idleTiltY) * processingBoost;
+        filament.material.uniforms.uColor.value.copy(coreFilamentColor);
+        filament.material.uniforms.uOpacity.value = coreFilamentOpacity;
+        filament.material.uniforms.uTime.value = this.flowTime;
+        if (!this.reduceMotion) {
+          const spin = CORE_FILAMENT_IDLE_SPIN * (1 + filament.spinVariation) * (1 + processingBoost * CORE_FILAMENT_PROCESSING_SPIN_BOOST);
+          filament.group.rotation.z += spin / 60;
+        }
+      });
+    }
 
     const glowEnterCurve = 1 + Math.sin(Math.min(enterCoreT, 1) * Math.PI) * 0.85;
     this.coreGlowMaterial.opacity = Math.min(
@@ -1742,7 +2056,8 @@ export class AutomationNetworkSceneController {
         CORE_GLOW_SPRITE_BRIGHTNESS,
     );
     this.coreGlow.scale.setScalar(
-      (2.0 + coreGlow * 1.0 + processingBoost * 0.8 + heartbeatActivity * 0.35) * (1 + enterCoreT * 0.5),
+      (2.0 + coreGlow * 1.0 + processingBoost * 0.8 + heartbeatActivity * 0.35) *
+        (1 + Math.min(enterCoreT, CORE_GLOW_SCALE_ENTER_CAP) * 0.5),
     );
 
     if (!this.reduceMotion) {
@@ -1750,26 +2065,19 @@ export class AutomationNetworkSceneController {
       this.coreShell.rotation.x -= CORE_SHELL_ROTATION_BASE * 0.6;
     }
 
-    const filamentGlow = 0.4 + processingBoost * 0.6;
-    const coreFilamentColor = this.scratchColor.copy(this.statusDarkColor).lerp(this.hotColor, filamentGlow);
-    const coreFilamentOpacity =
-      (CORE_FILAMENT_IDLE_OPACITY + (CORE_FILAMENT_PROCESSING_OPACITY - CORE_FILAMENT_IDLE_OPACITY) * processingBoost) *
-      coreVisibility;
-    this.coreFilaments.forEach((filament) => {
-      const radius = filament.idleRadius + (CORE_FILAMENT_RADIUS - filament.idleRadius) * processingBoost;
-      filament.group.scale.setScalar(radius * coreScale);
-      filament.group.rotation.x = filament.idleTiltX + (CORE_FILAMENT_ORGANIZED_TILT[0] - filament.idleTiltX) * processingBoost;
-      filament.group.rotation.y = filament.idleTiltY + (CORE_FILAMENT_ORGANIZED_TILT[1] - filament.idleTiltY) * processingBoost;
-      filament.material.uniforms.uColor.value.copy(coreFilamentColor);
-      filament.material.uniforms.uOpacity.value = coreFilamentOpacity;
-      filament.material.uniforms.uTime.value = this.flowTime;
-      if (!this.reduceMotion) {
-        const spin = CORE_FILAMENT_IDLE_SPIN * (1 + filament.spinVariation) * (1 + processingBoost * CORE_FILAMENT_PROCESSING_SPIN_BOOST);
-        filament.group.rotation.z += spin / 60;
-      }
-    });
-
-    if (!this.reduceMotion) {
+    // processingBoost is exactly 0 outside PROCESSING/ACTIONS (see
+    // CORE_PROCESSING_BOOST_TRACK) — including all of COMPLETE and ENTER
+    // CORE — which already made this opacity 0 there. But the sprite kept
+    // scaling up to ~10 world units with coreScale regardless, so late in
+    // ENTER CORE it was a fully invisible, near-fullscreen additive sprite
+    // still costing a full fragment pass every frame. Hide it outright
+    // whenever it can't be contributing instead of just zeroing opacity.
+    const shockwaveActive = !this.reduceMotion && processingBoost > 0.001;
+    if (shockwaveActive !== this.coreShockwaveVisible) {
+      this.coreShockwaveVisible = shockwaveActive;
+      this.coreShockwave.visible = shockwaveActive;
+    }
+    if (shockwaveActive) {
       const shockwavePhase = (this.flowTime % CORE_SHOCKWAVE_PERIOD) / CORE_SHOCKWAVE_PERIOD;
       const shockwaveScale = CORE_SHOCKWAVE_MIN_SCALE + (CORE_SHOCKWAVE_MAX_SCALE - CORE_SHOCKWAVE_MIN_SCALE) * shockwavePhase;
       this.coreShockwave.scale.setScalar(shockwaveScale * coreScale);
@@ -1779,185 +2087,236 @@ export class AutomationNetworkSceneController {
       this.coreShockwaveMaterial.opacity = 0;
     }
 
-    const leadPacketT = sampleLeadPacketT(progress);
-    const actionArrivals = ACTION_NODE_IDS.map((_, i) => sampleActionArrival(progress, i));
-
     const layoutT = sampleNodeLayoutT(progress);
-    const labelOpacity = sampleLabelOpacity(progress);
     const labelPositions: LabelScreenPosition[] = [];
-    const rect = this.onFrame ? this.container.getBoundingClientRect() : null;
-    const hoverActive = this.hoveredNodeId != null && restingComplete;
 
-    this.nodes.forEach((node, i) => {
-      const chaos = CHAOS_POSITIONS[i] ?? [0, 0, 0];
-      const assembled = ASSEMBLED_POSITIONS[i] ?? [0, 0, 0];
-      const x = (chaos[0] + (assembled[0] - chaos[0]) * layoutT) * this.nodeLayoutRadiusMultiplier;
-      const y = (chaos[1] + (assembled[1] - chaos[1]) * layoutT) * this.nodeLayoutRadiusMultiplier;
-      const z = (chaos[2] + (assembled[2] - chaos[2]) * layoutT) * this.nodeLayoutRadiusMultiplier;
-      const idleY = this.reduceMotion ? 0 : Math.sin(t * 0.6 + i * 1.7) * 0.05 * this.secondaryMotionScale;
-      node.group.position.set(x, y + idleY, z);
-      node.group.scale.setScalar(this.nodeMeshScaleMultiplier * Math.max(0.0001, sceneContentOpacity));
+    // Deep into ENTER CORE, nodes are already scaled to a sliver and
+    // connections/particles are practically invisible — stop paying for
+    // their per-frame updates (tube rebuild, rotations, DOM projection)
+    // instead of animating motion nobody can see behind the glowing Core.
+    const sceneContentVisible = sceneContentOpacity > SCENE_CONTENT_HIDE_THRESHOLD;
+    if (sceneContentVisible !== this.sceneContentVisible) {
+      this.sceneContentVisible = sceneContentVisible;
+      this.nodes.forEach((node) => {
+        node.group.visible = sceneContentVisible;
+      });
+      this.connections.forEach((connection) => {
+        connection.mesh.visible = sceneContentVisible;
+      });
+      this.particles.visible = sceneContentVisible;
+    }
 
-      let signal = 0;
-      if (node.id === LEAD_SOURCE_NODE_ID) {
-        signal = Math.max(signal, sampleNumberTrack(TELEGRAM_SEND_REACTION_TRACK, progress));
+    if (!sceneContentVisible && this.onFrame) {
+      // Same reasoning as the canvasDissolveT>=1 zeroing below: report
+      // explicit zeros instead of leaving labelPositions empty, so a label
+      // that was still visible the instant this flipped off doesn't keep
+      // showing at its last real opacity.
+      this.nodes.forEach((node) => {
+        labelPositions.push({ id: node.id, x: 0, y: 0, opacity: 0 });
+      });
+    }
+
+    if (sceneContentVisible) {
+      const leadPacketT = sampleLeadPacketT(progress);
+      const actionArrivals = ACTION_NODE_IDS.map((_, i) => sampleActionArrival(progress, i));
+
+      const labelOpacity = sampleLabelOpacity(progress);
+      const hoverActive = this.hoveredNodeId != null && restingComplete;
+
+      this.nodes.forEach((node, i) => {
+        const chaos = CHAOS_POSITIONS[i] ?? [0, 0, 0];
+        const assembled = ASSEMBLED_POSITIONS[i] ?? [0, 0, 0];
+        const x = (chaos[0] + (assembled[0] - chaos[0]) * layoutT) * this.nodeLayoutRadiusMultiplier;
+        const y = (chaos[1] + (assembled[1] - chaos[1]) * layoutT) * this.nodeLayoutRadiusMultiplier;
+        const z = (chaos[2] + (assembled[2] - chaos[2]) * layoutT) * this.nodeLayoutRadiusMultiplier;
+        const idleY = this.reduceMotion
+          ? 0
+          : Math.sin(this.secondaryIdleClock * 0.6 + i * 1.7) * 0.05 * this.secondaryMotionScale;
+        node.group.position.set(x, y + idleY, z);
+        node.group.scale.setScalar(this.nodeMeshScaleMultiplier * Math.max(0.0001, sceneContentOpacity));
+
+        let signal = 0;
+        if (node.id === LEAD_SOURCE_NODE_ID) {
+          signal = Math.max(signal, sampleNumberTrack(TELEGRAM_SEND_REACTION_TRACK, progress));
+        }
+        const actionIndex = ACTION_NODE_IDS.indexOf(node.id);
+        if (actionIndex !== -1) {
+          signal = Math.max(signal, actionArrivals[actionIndex]);
+        }
+
+        const arrivalPulse = Math.max(0, 1 - Math.abs(signal - 0.92) / 0.08);
+
+        const energyBase = NODE_ENERGY_IDLE + NODE_ENERGY_RANGE * signal;
+        const energy = Math.min(1, energyBase + arrivalPulse * NODE_ENERGY_ARRIVAL_BOOST);
+        const pulse = 4 * signal * (1 - signal);
+
+        const isHovered = hoverActive && node.id === this.hoveredNodeId;
+        const boostTarget = isHovered ? 1 : 0;
+        const dimTarget = hoverActive && !isHovered ? 1 : 0;
+        node.hoverBoostAmount = dampTowards(
+          node.hoverBoostAmount,
+          boostTarget,
+          hoverDt,
+          boostTarget > node.hoverBoostAmount ? HOVER_IN_TIME_CONSTANT : HOVER_OUT_TIME_CONSTANT,
+        );
+        node.hoverDimAmount = dampTowards(
+          node.hoverDimAmount,
+          dimTarget,
+          hoverDt,
+          dimTarget > node.hoverDimAmount ? HOVER_IN_TIME_CONSTANT : HOVER_OUT_TIME_CONSTANT,
+        );
+        const dimMultiplier = 1 - node.hoverDimAmount * (1 - NODE_HOVER_DIM_FACTOR);
+        const displayEnergy = Math.min(1, energy * dimMultiplier + node.hoverBoostAmount * NODE_HOVER_BOOST_ADD);
+
+        node.stemMaterial.uniforms.uTime.value = this.flowTime;
+        node.stemMaterial.uniforms.uBaseBrightness.value = 0.04 + displayEnergy * 0.5;
+        node.stemMaterial.uniforms.uColorMix.value = displayEnergy;
+        node.stemMaterial.uniforms.uPulseActivity.value = pulse;
+
+        const orbitEmissive = this.scratchColor
+          .copy(this.fgMutedColor)
+          .lerp(this.accentColor, displayEnergy)
+          .multiplyScalar(node.colorVariation);
+        node.orbitInnerMaterial.uniforms.uColor.value.copy(orbitEmissive);
+        node.orbitMidMaterial.uniforms.uColor.value.copy(orbitEmissive);
+        node.orbitOuterMaterial.uniforms.uColor.value.copy(orbitEmissive);
+
+        node.hotPointMaterial.uniforms.uIntensity.value =
+          NODE_HOT_INTENSITY * Math.max(displayEnergy, NODE_HOT_POINT_IDLE_FLOOR) * node.colorVariation;
+        node.hotPointMaterial.uniforms.uTime.value = this.flowTime;
+
+        if (!this.reduceMotion && !secondaryIdleFrozen) {
+          const spin =
+            (NODE_ORBIT_SPIN_BASE + NODE_ORBIT_SPIN_PULSE_BOOST * pulse + NODE_ORBIT_SPIN_ENERGY_BOOST * signal) *
+            (1 + node.orbitSpinVariation);
+          node.orbitInner.rotation.z += (spin * NODE_ORBIT_INNER_SPIN_AXIS_RATE) / 60;
+          node.orbitMid.rotation.x -= (spin * NODE_ORBIT_MID_SPIN_AXIS_RATE) / 60;
+          node.orbitOuter.rotation.y += (spin * NODE_ORBIT_OUTER_SPIN_AXIS_RATE) / 60;
+        }
+
+        node.glowMaterial.opacity =
+          NODE_GLOW_IDLE_OPACITY + (NODE_GLOW_ACTIVE_OPACITY - NODE_GLOW_IDLE_OPACITY) * displayEnergy;
+
+        if (this.onFrame) {
+          const projected = this.scratchVec3.copy(node.group.position).project(this.camera);
+          const behindCamera = projected.z > 1;
+          labelPositions.push({
+            id: node.id,
+            x: (projected.x * 0.5 + 0.5) * this.containerWidth,
+            y: (-projected.y * 0.5 + 0.5) * this.containerHeight,
+            opacity: behindCamera ? 0 : labelOpacity * sceneContentOpacity,
+          });
+        }
+      });
+
+      const connectionCount = this.connections.length;
+      let connectionRebuildsThisFrame = 0;
+      for (let k = 0; k < connectionCount; k++) {
+        const connection = this.connections[(this.connectionRebuildCursor + k) % connectionCount];
+        const node = this.nodesById.get(connection.nodeId);
+        if (!node) continue;
+        if (connection.lastTubeTarget.distanceToSquared(node.group.position) > CONNECTION_REBUILD_EPSILON_SQ) {
+          if (connectionRebuildsThisFrame < CONNECTION_REBUILD_MAX_PER_FRAME) {
+            this.updateConnectionTube(connection, node.group.position);
+            connection.lastTubeTarget.copy(node.group.position);
+            connectionRebuildsThisFrame++;
+          }
+          // else: still dirty, picked up on a following frame — never
+          // skipped outright, just spread out.
+        }
+
+        const draw = sampleConnectionDraw(progress) * sceneContentOpacity;
+
+        let signalHead = 0;
+        let signalDir = 1;
+        let signalActivity = 0;
+        if (connection.nodeId === LEAD_SOURCE_NODE_ID) {
+          signalHead = 1 - leadPacketT;
+          signalDir = -1;
+          signalActivity = 4 * leadPacketT * (1 - leadPacketT);
+        }
+        const actionIndex = ACTION_NODE_IDS.indexOf(connection.nodeId);
+        if (actionIndex !== -1) {
+          const arrival = actionArrivals[actionIndex];
+          signalHead = arrival;
+          signalDir = 1;
+          signalActivity = 4 * arrival * (1 - arrival);
+        }
+
+        if (heartbeatActivity > 0) {
+          signalHead = heartbeatHead;
+          signalDir = 1;
+          signalActivity = heartbeatActivity * HEARTBEAT_CONNECTION_ACTIVITY;
+        }
+
+        const u = connection.material.uniforms;
+        u.uTime.value = this.flowTime;
+        u.uDrawProgress.value = draw;
+        u.uSignalHead.value = signalHead;
+        u.uSignalDir.value = signalDir;
+        u.uSignalActivity.value = signalActivity;
+
+        const connectionHovered = hoverActive && connection.nodeId === this.hoveredNodeId;
+        const connectionBoostTarget = connectionHovered ? 1 : 0;
+        const connectionDimTarget = hoverActive && !connectionHovered ? 1 : 0;
+        connection.hoverBoostAmount = dampTowards(
+          connection.hoverBoostAmount,
+          connectionBoostTarget,
+          hoverDt,
+          connectionBoostTarget > connection.hoverBoostAmount
+            ? CONNECTION_HOVER_IN_TIME_CONSTANT
+            : CONNECTION_HOVER_OUT_TIME_CONSTANT,
+        );
+        connection.hoverDimAmount = dampTowards(
+          connection.hoverDimAmount,
+          connectionDimTarget,
+          hoverDt,
+          connectionDimTarget > connection.hoverDimAmount
+            ? CONNECTION_HOVER_IN_TIME_CONSTANT
+            : CONNECTION_HOVER_OUT_TIME_CONSTANT,
+        );
+        const connectionBoostEase = smoothstepJs(0, 1, connection.hoverBoostAmount);
+        const connectionDimEase = smoothstepJs(0, 1, connection.hoverDimAmount);
+        u.uHoverBoost.value = connectionBoostEase * NODE_HOVER_BOOST_ADD;
+        u.uHoverDim.value = 1 - connectionDimEase * (1 - NODE_HOVER_DIM_FACTOR);
       }
-      const actionIndex = ACTION_NODE_IDS.indexOf(node.id);
-      if (actionIndex !== -1) {
-        signal = Math.max(signal, actionArrivals[actionIndex]);
-      }
+      this.connectionRebuildCursor = (this.connectionRebuildCursor + CONNECTION_REBUILD_MAX_PER_FRAME) % connectionCount;
 
-      const arrivalPulse = Math.max(0, 1 - Math.abs(signal - 0.92) / 0.08);
+      const particleSpread = PARTICLE_CHAOS_SPREAD + (PARTICLE_SETTLED_SPREAD - PARTICLE_CHAOS_SPREAD) * layoutT;
+      this.particlesMaterial.uniforms.uSpread.value = particleSpread;
+      this.particlesMaterial.uniforms.uTime.value = this.flowTime;
+    }
 
-      const energyBase = NODE_ENERGY_IDLE + NODE_ENERGY_RANGE * signal;
-      const energy = Math.min(1, energyBase + arrivalPulse * NODE_ENERGY_ARRIVAL_BOOST);
-      const pulse = 4 * signal * (1 - signal);
-
-      const isHovered = hoverActive && node.id === this.hoveredNodeId;
-      const boostTarget = isHovered ? 1 : 0;
-      const dimTarget = hoverActive && !isHovered ? 1 : 0;
-      node.hoverBoostAmount = dampTowards(
-        node.hoverBoostAmount,
-        boostTarget,
-        hoverDt,
-        boostTarget > node.hoverBoostAmount ? HOVER_IN_TIME_CONSTANT : HOVER_OUT_TIME_CONSTANT,
-      );
-      node.hoverDimAmount = dampTowards(
-        node.hoverDimAmount,
-        dimTarget,
-        hoverDt,
-        dimTarget > node.hoverDimAmount ? HOVER_IN_TIME_CONSTANT : HOVER_OUT_TIME_CONSTANT,
-      );
-      const dimMultiplier = 1 - node.hoverDimAmount * (1 - NODE_HOVER_DIM_FACTOR);
-      const displayEnergy = Math.min(1, energy * dimMultiplier + node.hoverBoostAmount * NODE_HOVER_BOOST_ADD);
-
-      node.stemMaterial.uniforms.uTime.value = this.flowTime;
-      node.stemMaterial.uniforms.uBaseBrightness.value = 0.04 + displayEnergy * 0.5;
-      node.stemMaterial.uniforms.uColorMix.value = displayEnergy;
-      node.stemMaterial.uniforms.uPulseActivity.value = pulse;
-
-      const orbitEmissive = this.scratchColor
-        .copy(this.fgMutedColor)
-        .lerp(this.accentColor, displayEnergy)
-        .multiplyScalar(node.colorVariation);
-      node.orbitInnerMaterial.uniforms.uColor.value.copy(orbitEmissive);
-      node.orbitMidMaterial.uniforms.uColor.value.copy(orbitEmissive);
-      node.orbitOuterMaterial.uniforms.uColor.value.copy(orbitEmissive);
-
-      node.hotPointMaterial.uniforms.uIntensity.value =
-        NODE_HOT_INTENSITY * Math.max(displayEnergy, NODE_HOT_POINT_IDLE_FLOOR) * node.colorVariation;
-      node.hotPointMaterial.uniforms.uTime.value = this.flowTime;
-
-      if (!this.reduceMotion) {
-        const spin =
-          (NODE_ORBIT_SPIN_BASE + NODE_ORBIT_SPIN_PULSE_BOOST * pulse + NODE_ORBIT_SPIN_ENERGY_BOOST * signal) *
-          (1 + node.orbitSpinVariation);
-        node.orbitInner.rotation.z += (spin * NODE_ORBIT_INNER_SPIN_AXIS_RATE) / 60;
-        node.orbitMid.rotation.x -= (spin * NODE_ORBIT_MID_SPIN_AXIS_RATE) / 60;
-        node.orbitOuter.rotation.y += (spin * NODE_ORBIT_OUTER_SPIN_AXIS_RATE) / 60;
-      }
-
-      node.glowMaterial.opacity =
-        NODE_GLOW_IDLE_OPACITY + (NODE_GLOW_ACTIVE_OPACITY - NODE_GLOW_IDLE_OPACITY) * displayEnergy;
-
-      if (this.onFrame && rect) {
-        const projected = this.scratchVec3.copy(node.group.position).project(this.camera);
-        const behindCamera = projected.z > 1;
-        labelPositions.push({
-          id: node.id,
-          x: (projected.x * 0.5 + 0.5) * rect.width,
-          y: (-projected.y * 0.5 + 0.5) * rect.height,
-          opacity: behindCamera ? 0 : labelOpacity * sceneContentOpacity,
-        });
-      }
-    });
-
-    this.connections.forEach((connection) => {
-      const node = this.nodesById.get(connection.nodeId);
-      if (!node) return;
-      if (connection.lastTubeTarget.distanceToSquared(node.group.position) > CONNECTION_REBUILD_EPSILON_SQ) {
-        this.updateConnectionTube(connection, node.group.position);
-        connection.lastTubeTarget.copy(node.group.position);
-      }
-
-      const draw = sampleConnectionDraw(progress) * sceneContentOpacity;
-
-      let signalHead = 0;
-      let signalDir = 1;
-      let signalActivity = 0;
-      if (connection.nodeId === LEAD_SOURCE_NODE_ID) {
-        signalHead = 1 - leadPacketT;
-        signalDir = -1;
-        signalActivity = 4 * leadPacketT * (1 - leadPacketT);
-      }
-      const actionIndex = ACTION_NODE_IDS.indexOf(connection.nodeId);
-      if (actionIndex !== -1) {
-        const arrival = actionArrivals[actionIndex];
-        signalHead = arrival;
-        signalDir = 1;
-        signalActivity = 4 * arrival * (1 - arrival);
-      }
-
-      if (heartbeatActivity > 0) {
-        signalHead = heartbeatHead;
-        signalDir = 1;
-        signalActivity = heartbeatActivity * HEARTBEAT_CONNECTION_ACTIVITY;
-      }
-
-      const u = connection.material.uniforms;
-      u.uTime.value = this.flowTime;
-      u.uDrawProgress.value = draw;
-      u.uSignalHead.value = signalHead;
-      u.uSignalDir.value = signalDir;
-      u.uSignalActivity.value = signalActivity;
-
-      const connectionHovered = hoverActive && connection.nodeId === this.hoveredNodeId;
-      const connectionBoostTarget = connectionHovered ? 1 : 0;
-      const connectionDimTarget = hoverActive && !connectionHovered ? 1 : 0;
-      connection.hoverBoostAmount = dampTowards(
-        connection.hoverBoostAmount,
-        connectionBoostTarget,
-        hoverDt,
-        connectionBoostTarget > connection.hoverBoostAmount
-          ? CONNECTION_HOVER_IN_TIME_CONSTANT
-          : CONNECTION_HOVER_OUT_TIME_CONSTANT,
-      );
-      connection.hoverDimAmount = dampTowards(
-        connection.hoverDimAmount,
-        connectionDimTarget,
-        hoverDt,
-        connectionDimTarget > connection.hoverDimAmount
-          ? CONNECTION_HOVER_IN_TIME_CONSTANT
-          : CONNECTION_HOVER_OUT_TIME_CONSTANT,
-      );
-      const connectionBoostEase = smoothstepJs(0, 1, connection.hoverBoostAmount);
-      const connectionDimEase = smoothstepJs(0, 1, connection.hoverDimAmount);
-      u.uHoverBoost.value = connectionBoostEase * NODE_HOVER_BOOST_ADD;
-      u.uHoverDim.value = 1 - connectionDimEase * (1 - NODE_HOVER_DIM_FACTOR);
-    });
-
-    this.atmosphereInnerMaterial.opacity =
-      (ATMOSPHERE_INNER_OPACITY + processingBoost * ATMOSPHERE_PROCESSING_BOOST) * coreVisibility;
-
-    const particleSpread = PARTICLE_CHAOS_SPREAD + (PARTICLE_SETTLED_SPREAD - PARTICLE_CHAOS_SPREAD) * layoutT;
-    this.particlesMaterial.uniforms.uSpread.value = particleSpread;
-    this.particlesMaterial.uniforms.uTime.value = this.flowTime;
+    // atmosphereInner is a fixed-world-scale sprite, so as the camera dollies
+    // in through ENTER CORE its on-screen size keeps growing from proximity
+    // alone even though its opacity is tiny — by the late window it's an
+    // almost-fullscreen additive sprite contributing nothing next to the hot
+    // sphere/shell. Reuse the same fade window and stop-drawing-when-invisible
+    // pattern already applied to the orbit rings/filaments just above.
+    const atmosphereInnerVisible = coreSecondaryFade > 0.01;
+    if (atmosphereInnerVisible !== this.atmosphereInnerVisible) {
+      this.atmosphereInnerVisible = atmosphereInnerVisible;
+      this.atmosphereInner.visible = atmosphereInnerVisible;
+    }
+    if (atmosphereInnerVisible) {
+      this.atmosphereInnerMaterial.opacity =
+        (ATMOSPHERE_INNER_OPACITY + processingBoost * ATMOSPHERE_PROCESSING_BOOST) * coreVisibility * coreSecondaryFade;
+    }
 
     if (this.onFrame) {
-      const processingStatusOpacities: number[] = [];
       for (let i = 0; i < PROCESSING_STATUS_COUNT; i++) {
-        processingStatusOpacities.push(sampleProcessingStatusOpacity(progress, i) * sceneContentOpacity);
+        this.processingStatusOpacitiesBuf[i] = sampleProcessingStatusOpacity(progress, i) * sceneContentOpacity;
       }
-      const actionStatusOpacities: Record<string, number> = {};
-      ACTION_NODE_IDS.forEach((nodeId, i) => {
-        actionStatusOpacities[nodeId] = sampleActionStatusOpacity(progress, i) * sceneContentOpacity;
-      });
+      for (let i = 0; i < ACTION_NODE_IDS.length; i++) {
+        this.actionStatusOpacitiesBuf[ACTION_NODE_IDS[i]] = sampleActionStatusOpacity(progress, i) * sceneContentOpacity;
+      }
       this.onFrame({
         labels: labelPositions,
-        processingStatusOpacities,
-        actionStatusOpacities,
+        processingStatusOpacities: this.processingStatusOpacitiesBuf,
+        actionStatusOpacities: this.actionStatusOpacitiesBuf,
         completeOpacity: sampleCompleteMessageOpacity(progress) * sceneContentOpacity,
         canvasDissolveT,
+        heroPrepared,
       });
     }
 
