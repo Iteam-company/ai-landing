@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
+import { BrandMark } from "@/components/brand-mark";
 import { CallModal } from "@/components/call-modal";
 import { LangSwitcher } from "@/components/lang-switcher";
 import type { Site, Ui } from "@/content/types";
@@ -24,17 +24,30 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
-    const onScroll = () => {
-      const max = document.body.scrollHeight - window.innerHeight;
+    let maxScroll = document.body.scrollHeight - window.innerHeight;
+    let rafId: number | null = null;
+
+    const update = () => {
+      rafId = null;
       setScrolled(window.scrollY > 12);
-      setProgress(max > 0 ? Math.min(1, window.scrollY / max) : 0);
+      setProgress(maxScroll > 0 ? Math.min(1, window.scrollY / maxScroll) : 0);
     };
-    onScroll();
+    const onScroll = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(update);
+    };
+    const onResize = () => {
+      maxScroll = document.body.scrollHeight - window.innerHeight;
+      onScroll();
+    };
+
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+    window.addEventListener("resize", onResize);
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", onResize);
+      if (rafId != null) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -47,19 +60,15 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
       )}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 lg:px-10">
-        <a href="#top" className="group flex items-center gap-3" aria-label={brand.name}>
-          <Image
-            src="/logo-mark.png"
-            alt=""
-            width={80}
-            height={80}
-            priority
-            className="h-9 w-9 transition-transform duration-300 group-hover:-rotate-6"
-          />
-          <span className="font-display text-[15px] font-semibold tracking-tight">
-            {brand.name.toLowerCase()}
-            <span className="text-accent">.</span>
-            <span className="text-fg-muted">{brand.suffix}</span>
+        <a
+          href="#top"
+          className="group flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-80"
+          aria-label={`${brand.name}${brand.suffix}`}
+        >
+          <BrandMark className="h-7 w-auto text-fg" />
+          <span className="font-display text-[15px] uppercase tracking-wide">
+            <span className="font-bold text-fg">{brand.name}</span>
+            <span className="font-medium text-fg-muted">{brand.suffix}</span>
           </span>
         </a>
 
