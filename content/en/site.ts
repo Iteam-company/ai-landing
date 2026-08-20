@@ -2,9 +2,9 @@ import type { Site } from "../types";
 
 export const site: Site = {
   meta: {
-    title: "AI Team — Cut costs and respond to leads faster in 7 days",
+    title: "AI Team — Never lose a lead again",
     description:
-      "We launch business automation in 7 days to cut operating costs by up to 40%, process every lead faster and keep sales moving 24/7.",
+      "AI Team replies to every lead, updates your CRM, and books the call — automatically.",
     url: "https://neuroflow.agency",
     ogImage:
       "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
@@ -17,7 +17,7 @@ export const site: Site = {
     items: [
       { label: "pains", href: "#pains" },
       { label: "solutions", href: "#solutions" },
-      { label: "architecture", href: "#showcase" },
+      { label: "how it works", href: "#showcase" },
       { label: "about us", href: "#about" },
       { label: "contact", href: "#booking" },
     ],
@@ -58,31 +58,30 @@ export const site: Site = {
     processingStatuses: ["ANALYZING", "QUALIFYING", "EXTRACTING DATA"],
     completeMessage: "One lead. Zero manual steps.",
     exploreHint: {
-      title: "Explore your automation system",
-      subtitle: "Hover any node to see what it handles.",
-      mobileSubtitle: "Tap any node to see what it handles.",
+      title: "Explore the system",
+      subtitle: "Hover a node to see what happens.",
+      mobileSubtitle: "Tap a node to see what happens.",
     },
     intro: {
-      headline: "Explore your automation system",
-      subline: "See how every lead moves through your AI workflow.",
+      headline: "Watch a lead become a booked call.",
+      subline: "No manual steps.",
       hint: "Scroll down",
     },
   },
   hero: {
-    eyebrow: "Cut costs · faster lead response · launch in 7 days",
+    eyebrow: "Lead response, automated",
     primaryCta: { label: "Book a call", href: "#contact" },
     secondaryCta: { label: "Send us a message", href: "#booking" },
     stats: [
-      { value: "40%", label: "operating costs saved" },
-      { value: "7", label: "days to launch" },
-      { value: "24/7", label: "leads processed" },
+      { value: "24/7", label: "always answering leads" },
+      { value: "Auto", label: "CRM & follow-ups" },
+      { value: "Sync", label: "calendar, CRM & inbox" },
     ],
     scenarios: [
       {
         id: "lead-response",
-        title: "Turn every new lead into a conversation — in seconds",
-        subtitle:
-          "AI instantly qualifies incoming leads, prepares personalized replies and creates the next step in your CRM — even when your team is offline.",
+        title: "Never lose a lead again.",
+        subtitle: "Reply while they're still interested.",
         flow: {
           label: "lead-response.workflow",
           workflow: {
@@ -105,19 +104,18 @@ export const site: Site = {
             qualified: { eyebrow: "qualified", score: 92, scoreMax: 100 },
             action: {
               eyebrow: "action",
-              items: ["Reply ready", "CRM deal created", "Follow-up scheduled"],
+              items: ["Reply sent", "CRM deal created", "Follow-up scheduled"],
             },
           },
-          status: "workflow active · response time < 1 min",
+          status: "workflow active · AI handling it now",
         },
       },
       {
-        id: "email-automation",
-        title: "Put your business communication on autopilot",
-        subtitle:
-          "AI reads incoming emails, understands each request, prepares replies, routes conversations and makes sure nothing important gets lost.",
+        id: "email-handling",
+        title: "Every message gets handled.",
+        subtitle: "AI understands the request and responds automatically.",
         flow: {
-          label: "email-automation.workflow",
+          label: "email-handling.workflow",
           workflow: {
             kind: "email",
             input: {
@@ -135,7 +133,7 @@ export const site: Site = {
               ],
             },
             context: {
-              eyebrow: "knowledge / context",
+              eyebrow: "context",
               points: [
                 { label: "refund policy", value: "Found", emphasis: true },
                 { label: "invoice #10284", value: "Found", emphasis: true },
@@ -144,72 +142,70 @@ export const site: Site = {
             },
             action: {
               eyebrow: "action",
-              items: ["Draft reply created", "Finance notified", "Follow-up task created"],
+              items: ["Reply drafted", "Finance notified", "Follow-up task created"],
             },
           },
-          status: "inbox monitored · requests routed 24/7",
+          status: "inbox monitored · AI drafting replies",
         },
       },
       {
-        id: "crm-automation",
-        title: "Let your team sell. AI handles the CRM work.",
-        subtitle:
-          "Calls, messages and forms are automatically turned into structured CRM data, follow-ups and tasks — without manual updates.",
+        id: "meeting-booking",
+        title: "Turn interest into booked calls.",
+        subtitle: "AI checks availability and books the next step.",
         flow: {
-          label: "crm-automation.workflow",
-          workflow: {
-            kind: "crm",
-            input: { eyebrow: "call finished", duration: "18:42" },
-            analysis: {
-              eyebrow: "ai extraction",
-              points: [
-                { label: "company", value: "ACME" },
-                { label: "need", value: "Lead routing" },
-                { label: "budget", value: "$12,000" },
-                { label: "next step", value: "Product demo" },
-              ],
-            },
-            result: {
-              eyebrow: "crm update",
-              points: [
-                { label: "contact", value: "Updated", emphasis: true },
-                { label: "deal", value: "Created", emphasis: true },
-                { label: "task", value: "Created", emphasis: true },
-                { label: "follow-up", value: "Scheduled", emphasis: true },
-              ],
-            },
-          },
-          status: "crm synced · manual updates removed",
-        },
-      },
-      {
-        id: "knowledge-assistant",
-        title: "Give your team an AI that knows your business",
-        subtitle:
-          "Connect your documents, knowledge base and internal tools so employees can get accurate answers and perform routine actions through one assistant.",
-        flow: {
-          label: "knowledge-assistant.workflow",
+          label: "meeting-booking.workflow",
           workflow: {
             kind: "knowledge",
             input: {
-              eyebrow: "employee question",
-              quote: "What is our refund policy for enterprise customers?",
+              eyebrow: "lead reply",
+              quote: "Can we jump on a call this week?",
             },
             search: {
-              eyebrow: "searching knowledge",
+              eyebrow: "checking calendar",
               points: [
-                { label: "refund policy v4", value: "Found", emphasis: true },
-                { label: "enterprise contract", value: "Found", emphasis: true },
-                { label: "sales playbook", value: "Found", emphasis: true },
+                { label: "calendar", value: "Checked", emphasis: true },
+                { label: "slot", value: "Thu · 2:00 PM", emphasis: true },
+                { label: "duration", value: "30 min" },
               ],
             },
             answer: {
-              eyebrow: "ai answer",
-              text: "Enterprise customers can request a full refund within 30 days of the contract start date, or a pro-rated refund after that.",
-              sources: ["Policy v4 · p.12", "Contract · §4.2"],
+              eyebrow: "confirmation sent",
+              text: "You're booked for Thursday at 2:00 PM. Calendar invite sent, CRM updated.",
+              sources: ["Calendar", "CRM"],
             },
           },
-          status: "knowledge connected · answers in seconds",
+          status: "meeting confirmed · calendar & CRM updated",
+        },
+      },
+      {
+        id: "follow-up",
+        title: "Never forget the follow-up.",
+        subtitle: "AI keeps the conversation moving.",
+        flow: {
+          label: "follow-up.workflow",
+          workflow: {
+            kind: "crm",
+            input: { eyebrow: "no reply", duration: "3 days" },
+            analysis: {
+              eyebrow: "ai detection",
+              points: [
+                { label: "last contact", value: "Email" },
+                { label: "channel", value: "Telegram" },
+                { label: "tone", value: "Friendly" },
+                { label: "next step", value: "Follow-up", emphasis: true },
+              ],
+            },
+            result: {
+              eyebrow: "follow-up sent",
+              points: [
+                { label: "message", value: "Sent", emphasis: true },
+                { label: "CRM status", value: "Updated", emphasis: true },
+                { label: "reminder", value: "Scheduled", emphasis: true },
+                { label: "lead", value: "Re-engaged", emphasis: true },
+              ],
+            },
+          },
+          status: "silence detected · lead re-engaged automatically",
         },
       },
     ],
@@ -231,216 +227,193 @@ export const site: Site = {
     ],
   },
   pains: {
-    eyebrow: "01 · business pains",
-    title: "Where exactly your money leaks out",
-    subtitle:
-      "Four measurable bottlenecks that drain time and revenue—and what changes when the routine is automated.",
+    eyebrow: "01 · the cost of slow replies",
+    title: "Where leads get lost",
+    subtitle: "Four moments most businesses lose control of a lead.",
     cards: [
       {
-        tag: "sales",
-        metric: "< 1 min",
-        metricLabel: "target response time",
-        title: "How many leads do you lose while they wait?",
-        description:
-          "When a reply takes hours, the conversation often starts with a competitor instead.",
-        outcome:
-          "Automation answers, qualifies and routes every new request immediately—24/7.",
+        tag: "response",
+        metric: "HOURS",
+        metricLabel: "to the first reply",
+        title: "Slow replies",
+        description: "Good leads go cold while they wait.",
+        outcome: "AI replies the moment a lead comes in — day or night.",
+      },
+      {
+        tag: "follow-up",
+        metric: "SILENT",
+        metricLabel: "no second touch",
+        title: "Missed follow-ups",
+        description: "Interested prospects disappear without a second touch.",
+        outcome: "AI follows up automatically until the lead replies.",
       },
       {
         tag: "crm",
-        metric: "HOURS",
-        metricLabel: "lost every week",
-        title: "How much selling time disappears into CRM updates?",
-        description:
-          "Managers copy notes, prepare follow-ups and fill in deal cards instead of speaking to customers.",
-        outcome:
-          "Call summaries, CRM fields, tasks and follow-ups are created automatically.",
+        metric: "MANUAL",
+        metricLabel: "CRM data entry",
+        title: "Manual CRM work",
+        description: "Your team copies the same information between tools.",
+        outcome: "AI updates the CRM the moment something happens.",
       },
       {
-        tag: "support",
-        metric: "24/7",
-        metricLabel: "routine support",
-        title: "How much of the team’s day goes to repeat questions?",
-        description:
-          "Simple requests compete with complex cases for the same limited attention.",
-        outcome:
-          "A knowledge assistant responds instantly and links every answer back to its source.",
-      },
-      {
-        tag: "analytics",
-        metric: "LIVE",
-        metricLabel: "operational visibility",
-        title: "How much does yesterday’s data cost you?",
-        description:
-          "Manually assembled reports arrive after the moment to act has already passed.",
-        outcome:
-          "Sales and operational metrics update automatically as the underlying data changes.",
+        tag: "channels",
+        metric: "SCATTERED",
+        metricLabel: "across your tools",
+        title: "Scattered conversations",
+        description: "Email, CRM and calendar never stay in sync.",
+        outcome: "AI keeps every system in sync, automatically.",
       },
     ],
   },
   solutions: {
-    eyebrow: "02 · solutions",
-    title: "AI agents that close these gaps",
-    subtitle:
-      "Not a website chatbot, but agents inside your processes: with access to your CRM, calendar and knowledge base.",
+    eyebrow: "02 · what AI Team does",
+    title: "One system. Four capabilities.",
+    subtitle: "Everything your leads need, in one connected flow.",
     items: [
       {
-        id: "lead-qualifier",
+        id: "reply",
         index: "01",
-        name: "AI Lead Qualifier",
-        icon: "radar",
-        title: "More qualified calls—without manager involvement",
-        description:
-          "Responds in under a minute, asks the right questions and offers a meeting slot when the lead is ready.",
+        name: "Reply",
+        icon: "bot",
+        title: "Replies to every lead automatically",
+        description: "Reads the message, understands the request, and replies — day or night.",
         demo: {
           caption: "Telegram · sample conversation",
-          ariaLabel: "AI qualifier reading an inbound lead, qualifying it and booking a call",
+          ariaLabel: "AI reading an inbound message and replying automatically",
           stages: [
-            { id: "lead-in", label: "Lead in", detail: "New message via Telegram", tone: "input" },
+            { id: "lead-in", label: "Message in", detail: "New message received", tone: "input" },
             {
               id: "reading",
               label: "Reading message",
-              detail: "Parsing intent and urgency",
+              detail: "Understanding the request",
               tone: "agent",
               typing: true,
             },
-            { id: "captured", label: "Need, budget & timeline", detail: "Requirements captured", tone: "agent" },
-            { id: "qualified", label: "Qualified", detail: "Scored as sales-ready", tone: "agent" },
-            { id: "slot", label: "Slot offered", detail: "Open time proposed", tone: "agent" },
-            {
-              id: "booked",
-              label: "Meeting booked · CRM updated",
-              detail: "Call confirmed · deal created",
-              tone: "result",
-            },
+            { id: "context", label: "Context checked", detail: "Previous conversation reviewed", tone: "agent" },
+            { id: "reply-drafted", label: "Reply drafted", detail: "Personalized response ready", tone: "agent" },
+            { id: "sent", label: "Reply sent", detail: "Delivered automatically", tone: "result" },
           ],
         },
-        tags: ["Telegram / WhatsApp", "BANT scoring", "Calendar", "CRM"],
+        tags: ["Telegram / WhatsApp / Web", "Any channel"],
       },
       {
-        id: "crm-assistant",
+        id: "qualify",
         index: "02",
-        name: "AI CRM Assistant",
-        icon: "bot",
-        title: "Returns selling hours to every manager, every week",
-        description:
-          "Turns every sales call into a clean summary, updated CRM fields and a ready-to-run follow-up task.",
+        name: "Qualify",
+        icon: "radar",
+        title: "Scores every lead automatically",
+        description: "Asks the right questions and ranks leads by fit — no manager needed.",
         demo: {
-          caption: "CRM · post-call workflow",
-          ariaLabel: "AI assistant transcribing a sales call and updating the CRM",
+          caption: "CRM · lead scoring",
+          ariaLabel: "AI asking qualifying questions and scoring the lead",
           stages: [
-            { id: "call-ended", label: "Call ended", detail: "Discovery call · 26 min", tone: "input" },
-            { id: "transcribing", label: "Transcribing", detail: "Converting audio to text", tone: "agent" },
+            { id: "lead-in", label: "Lead in", detail: "New conversation started", tone: "input" },
             {
-              id: "extracting",
-              label: "Extracting insights",
-              detail: "Needs, objections, next step",
+              id: "asking",
+              label: "Asking questions",
+              detail: "Need, budget, timeline",
               tone: "agent",
               typing: true,
             },
-            { id: "crm-updated", label: "CRM updated", detail: "Deal fields filled in", tone: "agent" },
-            { id: "follow-up", label: "Follow-up created", detail: "Task scheduled for rep", tone: "agent" },
-            { id: "summary", label: "Summary ready", detail: "One-page recap sent", tone: "result" },
+            { id: "captured", label: "Answers captured", detail: "Requirements recorded", tone: "agent" },
+            { id: "scored", label: "Lead scored", detail: "Ranked by fit", tone: "agent" },
+            { id: "routed", label: "Routed to CRM", detail: "Ready for your team", tone: "result" },
           ],
         },
-        tags: ["Transcription", "Summaries", "CRM tasks", "PDF proposals"],
+        tags: ["Lead scoring", "CRM-ready"],
       },
       {
-        id: "knowledge-assistant",
+        id: "act",
         index: "03",
-        name: "Knowledge Assistant",
-        icon: "library",
-        title: "Answers routine questions in seconds—with sources",
-        description:
-          "Finds the answer across your playbooks, PDFs and workspace, then shows exactly where it came from.",
+        name: "Act",
+        icon: "workflow",
+        title: "Books the call, updates the CRM",
+        description: "Checks availability, books the meeting, and fills in the CRM record.",
         demo: {
-          caption: "Knowledge base · sample query",
-          ariaLabel: "Knowledge assistant searching company documents and answering with a source",
+          caption: "Calendar · booking a call",
+          ariaLabel: "AI checking availability and booking a meeting",
           stages: [
-            { id: "question", label: "Question received", detail: "“What is our refund policy?”", tone: "input" },
-            { id: "searching", label: "Searching knowledge base", detail: "Scanning docs and playbooks", tone: "agent" },
-            { id: "source-found", label: "Source found", detail: "Policy.pdf · section 4.2", tone: "agent" },
+            { id: "ready", label: "Lead ready", detail: "Qualified and interested", tone: "input" },
             {
-              id: "drafted",
-              label: "Answer drafted",
-              detail: "Response grounded in source",
+              id: "checking",
+              label: "Checking calendar",
+              detail: "Finding an open slot",
               tone: "agent",
               typing: true,
             },
-            { id: "source-attached", label: "Source attached", detail: "Link included in reply", tone: "agent" },
-            { id: "answer-sent", label: "Answer sent", detail: "Delivered with citation", tone: "result" },
+            { id: "slot", label: "Slot offered", detail: "Time proposed to the lead", tone: "agent" },
+            { id: "booked", label: "Meeting booked", detail: "Confirmed and added", tone: "agent" },
+            { id: "synced", label: "CRM updated", detail: "Deal and details filled in", tone: "result" },
           ],
         },
-        tags: ["RAG", "Vector store", "Playbooks", "Source links"],
+        tags: ["Calendar", "CRM", "No manual entry"],
       },
       {
-        id: "workflow-automation",
+        id: "follow-up",
         index: "04",
-        name: "Workflow Automation",
-        icon: "workflow",
-        title: "Moves data between your tools without manual work",
-        description:
-          "Connects forms, CRM, messengers and spreadsheets so every routine step happens in the right system.",
+        name: "Follow up",
+        icon: "library",
+        title: "Never lets a lead go quiet",
+        description: "Notices no reply and follows up automatically until the lead responds.",
         demo: {
-          caption: "Operations · sample workflow",
-          ariaLabel: "Automated workflow enriching, scoring and routing a new lead",
+          caption: "CRM · automatic follow-up",
+          ariaLabel: "AI detecting silence and sending a follow-up",
           stages: [
-            { id: "submitted", label: "Form submitted", detail: "New enterprise request", tone: "input" },
-            { id: "enriched", label: "Data enriched", detail: "Company and contact details added", tone: "agent" },
-            { id: "scored", label: "Lead scored", detail: "Priority assigned", tone: "agent" },
-            { id: "record", label: "CRM record created", detail: "Deal added to pipeline", tone: "agent" },
-            { id: "notified", label: "Slack notified", detail: "Team alerted in #sales", tone: "agent" },
-            { id: "assigned", label: "Task assigned", detail: "Owner set · due today", tone: "result" },
+            { id: "quiet", label: "Lead went quiet", detail: "No reply in a few days", tone: "input" },
+            {
+              id: "detected",
+              label: "Silence detected",
+              detail: "Follow-up triggered",
+              tone: "agent",
+              typing: true,
+            },
+            { id: "drafted", label: "Message drafted", detail: "Personalized, not generic", tone: "agent" },
+            { id: "sent", label: "Follow-up sent", detail: "Delivered automatically", tone: "agent" },
+            { id: "updated", label: "CRM updated", detail: "Status and next step logged", tone: "result" },
           ],
         },
-        tags: ["n8n", "Webhooks", "API", "Self-hosted"],
+        tags: ["Auto follow-up", "CRM logged"],
       },
     ],
   },
   showcase: {
-    eyebrow: "03 · architecture demo",
-    title: "How it works on a live lead",
-    subtitle:
-      "One inbound lead runs the whole route in a matter of seconds — without a single manager click.",
+    eyebrow: "03 · how it works",
+    title: "From new lead to booked call",
+    subtitle: "One flow. No manual steps.",
     steps: [
       {
         index: "01",
-        title: "Inbound lead",
-        description:
-          "A website form, Telegram or email — everything arrives at a single n8n webhook.",
-        meta: "~0.4 sec",
+        title: "Lead comes in",
+        description: "From your site, Telegram, WhatsApp or email.",
+        meta: "instant",
       },
       {
         index: "02",
-        title: "AI analysis",
-        description:
-          "The agent parses the request, detects segment and budget, scores it and picks the reply scenario.",
-        meta: "~3 sec",
+        title: "AI understands it",
+        description: "Reads the message, qualifies the lead, decides what happens next.",
+        meta: "qualified",
       },
       {
         index: "03",
-        title: "Deal in the CRM",
-        description:
-          "A deal is created with its fields and tags filled in, plus a task for the manager in charge.",
-        meta: "~1 sec",
+        title: "AI takes action",
+        description: "Replies, books a meeting, updates your CRM.",
+        meta: "automatic",
       },
       {
         index: "04",
-        title: "Telegram alert",
-        description:
-          "The team gets the lead card with a summary and a recommendation — ready to call right away.",
-        meta: "instant",
+        title: "Your team stays in control",
+        description: "Every step is logged. Step into any conversation, any time.",
+        meta: "always",
       },
     ],
-    note: "Transparent architecture: the data belongs to you and the logic stays fully under your control.",
-    caption: "pipeline · demo",
+    note: "Every action is logged — you can step in any time.",
+    caption: "lead flow · demo",
   },
   about: {
     eyebrow: "04 · about us",
-    title: "AI architecture by entrepreneurs, for entrepreneurs",
-    subtitle:
-      "We implement automation with a deep understanding of business economics, P&L and operational processes.",
-    trust: ["ROI-first", "Lean scale", "IT products", "Restaurants", "Agencies"],
+    title: "Built for how teams actually work.",
+    subtitle: "We've run the P&L. We know exactly what a lost lead costs.",
+    trust: ["ROI-first", "Fixed scope", "EU · US"],
     founder: {
       caption: "founder · operator perspective",
       name: "Dmytro Nych",
@@ -451,9 +424,9 @@ export const site: Site = {
       quote:
         "The biggest mistake in AI adoption is entrusting it to people who have never run a business themselves.",
       description:
-        "When you run a business, you quickly learn to account for every manager’s minute and every lost lead. We created AI Team to give founders and C-level teams a transparent, secure AI system that works 24/7 without depending on manual execution.",
+        "We built AI Team so every lead gets answered and the CRM updates itself — without anyone watching it 24/7.",
       delivery:
-        "We take ownership of the entire journey—from a deep process audit to production-ready architecture delivered end to end.",
+        "We handle it end to end — from audit to a live system running in your CRM.",
       stats: [
         { value: "5+", label: "years building products" },
         { value: "30+", label: "MVPs delivered" },
@@ -553,38 +526,38 @@ export const site: Site = {
     transition: "Questions about control or ongoing support?",
   },
   faq: {
-    eyebrow: "05 · frequently asked questions",
-    title: "What happens after the automation goes live?",
-    subtitle: "Clear answers about control, reliability and ongoing support.",
+    eyebrow: "05 · faq",
+    title: "What happens after it goes live?",
+    subtitle: "Control, reliability, and what changes after launch.",
     caption: "faq · operations",
     items: [
       {
         question: "What happens if the AI gets something wrong?",
         answer:
-          "Critical actions never have to run blindly. We set confidence thresholds and route uncertain or high-risk cases to a manager in Telegram or CRM. Every decision is logged, so the workflow can be reviewed and corrected.",
+          "High-risk actions never run blindly. Uncertain cases route to a manager, and every decision is logged so you can review it.",
       },
       {
-        question: "Which actions can require human approval?",
+        question: "Which actions need human approval?",
         answer:
-          "You decide where the agent can act independently. Routine replies may be automatic, while discounts, contracts, payments or sensitive customer decisions can require explicit approval.",
+          "You decide. Routine replies can be automatic; discounts or sensitive decisions can require approval.",
       },
       {
-        question: "What is included in ongoing support?",
+        question: "What's included after launch?",
         answer:
-          "The Business System includes one month of post-launch support. After that, you can request changes as needed or choose an optional monthly support plan agreed before handover.",
+          "One month of support is included. After that, support is optional and agreed upfront.",
       },
       {
-        question: "Can you work with our existing CRM and tools?",
+        question: "Will it work with our CRM and tools?",
         answer:
-          "Usually, yes. We connect to your current CRM, messengers, calendar and data sources through APIs and webhooks. If a system has technical limitations, we identify them during the process review before development starts.",
+          "Usually, yes — we connect to your existing CRM, messengers, calendar and inbox through APIs and webhooks.",
       },
       {
-        question: "Can the workflow be changed after launch?",
+        question: "Can we change it after launch?",
         answer:
-          "Yes. Prompts, routing rules, approval steps and integrations can be updated as your process changes. You do not need to rebuild the entire system for every adjustment.",
+          "Yes. Rules, replies and integrations can be updated any time — no rebuild required.",
       },
     ],
-    transition: "Have a process in mind? Let’s review the risks and costs together",
+    transition: "Have a process in mind? Let’s talk.",
   },
   pricing: {
     eyebrow: "04 · pricing",
@@ -640,9 +613,8 @@ export const site: Site = {
   },
   contact: {
     eyebrow: "07 · get in touch",
-    title: "Claim your 40% of operating costs",
-    subtitle:
-      "Pick a slot in the calendar or describe your task in the form — we reply within one business day.",
+    title: "Ready to stop losing leads?",
+    subtitle: "Book a call, or send a quick message — we reply within a day.",
     calendar: {
       title: "Direct booking",
       description:
@@ -685,10 +657,11 @@ export const site: Site = {
   },
   footer: {
     tagline:
-      "An AI-automation studio: agents, n8n workflows and integrations for sales and support teams.",
-    copyright: "© {year} AI Team. Automation without magic — just processes and logs.",
+      "AI that replies to every lead, updates your CRM, and books the call — automatically.",
+    copyright: "© {year} AI Team. All rights reserved.",
     links: [
       { label: "solutions", href: "#solutions" },
+      { label: "how it works", href: "#showcase" },
       { label: "about us", href: "#about" },
       { label: "contact", href: "#booking" },
     ],
