@@ -14,10 +14,11 @@ interface AutomationNetworkHeroProps {
 
 /**
  * Bridges AutomationNetwork's scroll-driven ENTER CORE reveal to Hero's own
- * entrance animation — a thin client boundary purely so both can share one
- * `heroRevealed` boolean (Landing itself renders them as plain siblings and
- * doesn't otherwise need to be a Client Component). See onRevealChange in
- * automation-network-scene.tsx for what actually flips this.
+ * entrance animation — a thin client boundary purely so both can share the
+ * `heroRevealed`/`heroPrepared` booleans (Landing itself renders them as
+ * plain siblings and doesn't otherwise need to be a Client Component). See
+ * onRevealChange/onPreparedChange in automation-network-scene.tsx for what
+ * actually flips these.
  */
 export function AutomationNetworkHero({
   automationNetworkContent,
@@ -26,11 +27,22 @@ export function AutomationNetworkHero({
   a11y,
 }: AutomationNetworkHeroProps) {
   const [heroRevealed, setHeroRevealed] = useState(false);
+  const [heroPrepared, setHeroPrepared] = useState(false);
 
   return (
     <>
-      <AutomationNetwork content={automationNetworkContent} onRevealChange={setHeroRevealed} />
-      <Hero content={heroContent} calendar={calendar} a11y={a11y} revealed={heroRevealed} />
+      <AutomationNetwork
+        content={automationNetworkContent}
+        onRevealChange={setHeroRevealed}
+        onPreparedChange={setHeroPrepared}
+      />
+      <Hero
+        content={heroContent}
+        calendar={calendar}
+        a11y={a11y}
+        revealed={heroRevealed}
+        prepared={heroPrepared}
+      />
     </>
   );
 }

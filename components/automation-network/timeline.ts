@@ -315,10 +315,26 @@ export function sampleCanvasDissolveT(progress: number): number {
   );
 }
 
-export function isHoverPhaseActive(progress: number): boolean {
-  return progress >= PHASES.complete[0] && progress < PHASES.enterCore[0];
+// A lead-in before CANVAS_DISSOLVE_START, scaled off the dissolve window's
+// own span (not a fixed wall-clock guess) — see isHeroPrepared. 30% of that
+// span is comfortably inside the stretch where the AutomationNetwork
+// backdrop is still fully opaque (canvasDissolveT is exactly 0 for any
+// progress below CANVAS_DISSOLVE_START), while still being close enough to
+// the real reveal that "prepared" reads as "about to be revealed," not an
+// early, independent phase of its own.
+const HERO_PREPARE_LEAD = (1 - CANVAS_DISSOLVE_START) * 0.3;
+
+/**
+ * True once Hero should start preparing its compositor layers (see the
+ * `prepared` prop on Hero) — strictly before CANVAS_DISSOLVE_START, so the
+ * opaque backdrop still fully covers it. Never gates the visible entrance
+ * animation itself; that stays on sampleCanvasDissolveT(progress) > 0 via
+ * `revealed`, unchanged.
+ */
+export function isHeroPrepared(progress: number): boolean {
+  return progress >= CANVAS_DISSOLVE_START - HERO_PREPARE_LEAD;
 }
 
-export function isCoreRevealed(progress: number): boolean {
-  return progress >= CANVAS_DISSOLVE_START;
+export function isHoverPhaseActive(progress: number): boolean {
+  return progress >= PHASES.complete[0] && progress < PHASES.enterCore[0];
 }

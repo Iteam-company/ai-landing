@@ -7,7 +7,13 @@ import {
   AutomationNetworkSceneController,
   type AutomationNetworkFrameState,
 } from "@/components/automation-network/scene-controller";
-import { isHoverPhaseActive, isCoreRevealed, sampleIntroRevealT } from "@/components/automation-network/timeline";
+import { markPhaseTransition } from "@/components/automation-network/dev-perf-marks";
+import {
+  isHoverPhaseActive,
+  sampleIntroRevealT,
+  sampleCanvasDissolveT,
+  sampleEnterCoreT,
+} from "@/components/automation-network/timeline";
 import { Lightfall } from "@/components/effects/lightfall";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +24,18 @@ const DETAIL_CARD_OFFSET_Y = 54;
 
 const DOM_SYNC_OPACITY_EPSILON = 0.004;
 const DOM_SYNC_POSITION_EPSILON_PX = 0.4;
+
+// Mirrors the Three.js renderer's own late-ENTER-CORE DPR tiers (see
+// scene-controller.ts) — the dim Lightfall is a second fullscreen WebGL
+// canvas rendering in parallel behind the Core the whole time, so cutting
+// its resolution in the same window cuts real parallel GPU work instead of
+// leaving it running at full cost while the Core close-up dominates the
+// screen. Discrete tiers (not a continuous curve) so the drawing buffer is
+// only reallocated on an actual quality change, never per frame.
+const LIGHTFALL_DPR_TIER1_THRESHOLD = 0.72;
+const LIGHTFALL_DPR_TIER1_SCALE = 0.92;
+const LIGHTFALL_DPR_TIER2_THRESHOLD = 0.82;
+const LIGHTFALL_DPR_TIER2_SCALE = 0.85;
 
 interface DomSyncCache {
   labelX: Record<string, number>;
@@ -68,6 +86,7 @@ export interface AutomationNetworkSceneProps {
   isMobile?: boolean;
   className?: string;
   onRevealChange?: (revealed: boolean) => void;
+  onPreparedChange?: (prepared: boolean) => void;
 }
 
 function WorkflowStepsLoop({ steps, reduceMotion }: { steps: string[]; reduceMotion: boolean }) {
@@ -122,6 +141,7 @@ export function AutomationNetworkScene({
   isMobile = false,
   className,
   onRevealChange,
+  onPreparedChange,
 }: AutomationNetworkSceneProps) {
   const reduce = useReducedMotion();
 
@@ -137,6 +157,19 @@ export function AutomationNetworkScene({
   const dimLightfallWrapRef = useRef<HTMLDivElement | null>(null);
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const revealedRef = useRef(false);
+  const preparedRef = useRef(false);
+
+  // The dim Lightfall's own IntersectionObserver only tracks geometric
+  // visibility — this sticky panel stays "intersecting" long after the
+  // canvas has faded to opacity 0, so without an explicit gate it would
+  // keep paying for its full shader every frame on Hero. Driven from
+  // onFrame's canvasDissolveT (the controller's damped progress), not raw
+  // scroll, so it never cuts the fade-out short.
+  const [lightfallActive, setLightfallActive] = useState(true);
+  const lightfallActiveRef = useRef(true);
+
+  const [lightfallDprScale, setLightfallDprScale] = useState(1);
+  const lightfallDprScaleRef = useRef(1);
 
   const hoveredNodeIdRef = useRef<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
@@ -147,8 +180,12 @@ export function AutomationNetworkScene({
   const introHintRef = useRef<HTMLDivElement | null>(null);
   const headerElRef = useRef<HTMLElement | null>(null);
 
+  const introRevealCacheRef = useRef<number | null>(null);
+
   function applyIntroStyles(v: number) {
     const revealT = sampleIntroRevealT(v);
+    if (!changed(introRevealCacheRef.current, revealT, DOM_SYNC_OPACITY_EPSILON)) return;
+    introRevealCacheRef.current = revealT;
     const introOpacity = 1 - revealT;
     if (introContentRef.current) {
       introContentRef.current.style.opacity = String(introOpacity);
@@ -218,6 +255,37 @@ export function AutomationNetworkScene({
           cache.canvasOpacity = canvasOpacity;
         }
 
+        const shouldLightfallBeActive = state.canvasDissolveT < 1;
+        if (shouldLightfallBeActive !== lightfallActiveRef.current) {
+          lightfallActiveRef.current = shouldLightfallBeActive;
+          setLightfallActive(shouldLightfallBeActive);
+        }
+
+        // Hero's own entrance animation + interactivity must start exactly
+        // when the 3D scene actually starts becoming transparent — not on
+        // raw scroll, which (via PROGRESS_SMOOTHING_TIME_CONSTANT damping in
+        // the controller) reaches this threshold measurably earlier than the
+        // rendered canvasDissolveT does. Reusing that same signal here (as
+        // shouldLightfallBeActive does above) keeps every reveal-adjacent
+        // effect on one consistent, already-rendered progress value.
+        const revealed = state.canvasDissolveT > 0;
+        markPhaseTransition("hero-reveal", revealed);
+        if (revealed !== revealedRef.current) {
+          revealedRef.current = revealed;
+          onRevealChange?.(revealed);
+        }
+
+        // Fires a bit before `revealed` (see isHeroPrepared in timeline.ts),
+        // while canvasDissolveT is still exactly 0 and the opaque backdrop
+        // still fully covers Hero — lets Hero prepare its compositor layers
+        // ahead of the visible entrance without playing any of it early.
+        const prepared = state.heroPrepared;
+        markPhaseTransition("hero-prepared", prepared);
+        if (prepared !== preparedRef.current) {
+          preparedRef.current = prepared;
+          onPreparedChange?.(prepared);
+        }
+
         const hoveredId = hoveredNodeIdRef.current;
         if (hoveredId && cardRef.current) {
           const hoveredLabel = state.labels.find((p) => p.id === hoveredId);
@@ -258,17 +326,28 @@ export function AutomationNetworkScene({
   }, [reduce, isMobile]);
 
   useMotionValueEvent(progress, "change", (v) => {
+    // Eager, cheap (start() no-ops if already running) wake-up: reverse
+    // scroll off Hero must resume the scene immediately, not wait for the
+    // damped canvasDissolveT to confirm it — that confirmation is only safe
+    // to gate the *stop* decision (see renderFrame's self-stop), not resume.
+    if (sampleCanvasDissolveT(v) < 1) controllerRef.current?.start();
     controllerRef.current?.setProgress(v);
     applyIntroStyles(v);
+    const enterCoreT = sampleEnterCoreT(v);
+    const dprScale =
+      enterCoreT >= LIGHTFALL_DPR_TIER2_THRESHOLD
+        ? LIGHTFALL_DPR_TIER2_SCALE
+        : enterCoreT >= LIGHTFALL_DPR_TIER1_THRESHOLD
+          ? LIGHTFALL_DPR_TIER1_SCALE
+          : 1;
+    if (dprScale !== lightfallDprScaleRef.current) {
+      lightfallDprScaleRef.current = dprScale;
+      setLightfallDprScale(dprScale);
+    }
     const eligible = isHoverPhaseActive(v);
     if (eligible !== hoverEligibleRef.current) {
       hoverEligibleRef.current = eligible;
       setHoverEligible(eligible);
-    }
-    const revealed = isCoreRevealed(v);
-    if (revealed !== revealedRef.current) {
-      revealedRef.current = revealed;
-      onRevealChange?.(revealed);
     }
   });
 
@@ -331,6 +410,8 @@ export function AutomationNetworkScene({
           opacity={isMobile ? 0.2 : 0.32}
           glow={isMobile ? 0.16 : 0.26}
           backgroundGlow={isMobile ? 0.03 : 0.05}
+          active={lightfallActive}
+          dprScale={lightfallDprScale}
         />
       </div>
 

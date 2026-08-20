@@ -2,7 +2,7 @@ import type { Site } from "../types";
 
 export const site: Site = {
   meta: {
-    title: "Neuroflow — Cut costs and respond to leads faster in 7 days",
+    title: "AI Team — Cut costs and respond to leads faster in 7 days",
     description:
       "We launch business automation in 7 days to cut operating costs by up to 40%, process every lead faster and keep sales moving 24/7.",
     url: "https://neuroflow.agency",
@@ -10,9 +10,8 @@ export const site: Site = {
       "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop",
   },
   brand: {
-    monogram: "NF",
-    name: "Neuroflow",
-    suffix: "ai",
+    name: "AI",
+    suffix: "Team",
   },
   nav: {
     items: [
@@ -445,14 +444,14 @@ export const site: Site = {
     founder: {
       caption: "founder · operator perspective",
       name: "Dmytro Nych",
-      role: "Founder · Neuroflow.ai",
+      role: "Founder · AI Team",
       monogram: "DN",
       image: "/founder-dmytro-nych.jpg",
-      imageAlt: "Portrait of Dmytro Nych, founder of Neuroflow.ai",
+      imageAlt: "Portrait of Dmytro Nych, founder of AI Team",
       quote:
         "The biggest mistake in AI adoption is entrusting it to people who have never run a business themselves.",
       description:
-        "When you run a business, you quickly learn to account for every manager’s minute and every lost lead. We created Neuroflow.ai to give founders and C-level teams a transparent, secure AI system that works 24/7 without depending on manual execution.",
+        "When you run a business, you quickly learn to account for every manager’s minute and every lost lead. We created AI Team to give founders and C-level teams a transparent, secure AI system that works 24/7 without depending on manual execution.",
       delivery:
         "We take ownership of the entire journey—from a deep process audit to production-ready architecture delivered end to end.",
       stats: [
@@ -649,7 +648,7 @@ export const site: Site = {
       description:
         "Pick a day and time — 30 minutes on Google Meet. The meeting link arrives right after booking.",
       placeholder:
-        "The calendar is not connected yet. Set NEXT_PUBLIC_CAL_LINK (for example, “neuroflow/30min”) and the Cal.com widget will appear here.",
+        "The calendar is not connected yet. Set NEXT_PUBLIC_CAL_LINK (for example, “ai-team/30min”) and the Cal.com widget will appear here.",
       caption: "cal.com · 30 min",
     },
     form: {
@@ -687,7 +686,7 @@ export const site: Site = {
   footer: {
     tagline:
       "An AI-automation studio: agents, n8n workflows and integrations for sales and support teams.",
-    copyright: "© {year} Neuroflow. Automation without magic — just processes and logs.",
+    copyright: "© {year} AI Team. Automation without magic — just processes and logs.",
     links: [
       { label: "solutions", href: "#solutions" },
       { label: "about us", href: "#about" },

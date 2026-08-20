@@ -23,7 +23,25 @@ export interface LightfallProps {
   mouseRadius?: number;
   mouseDampening?: number;
   dpr?: number;
+  /**
+   * Live-updatable multiplier applied on top of the base `dpr` (or its
+   * auto-detected default) — e.g. 0.92/0.85 to cut fragment cost during an
+   * expensive fullscreen window elsewhere on the page. Changing it after
+   * mount reallocates the WebGL drawing buffer at the new resolution via
+   * `renderer.setSize` (same canvas, same context — no remount, no context
+   * loss) instead of leaving it fixed for the component's lifetime.
+   */
+  dprScale?: number;
   pauseOffscreen?: boolean;
+  /**
+   * External render gate on top of the built-in IntersectionObserver pause.
+   * IntersectionObserver only tracks geometric visibility — a container that
+   * has faded to `opacity: 0` (or is covered) is still "intersecting", so
+   * without this a caller that dims/dissolves Lightfall via CSS has no way
+   * to actually stop the RAF/shader work once it's invisible. Defaults to
+   * true so existing callers are unaffected.
+   */
+  active?: boolean;
 }
 
 type RGB = [number, number, number];
@@ -230,17 +248,25 @@ export function Lightfall({
   mouseRadius = 0.9,
   mouseDampening = 0.15,
   dpr,
+  dprScale = 1,
   pauseOffscreen = true,
+  active = true,
 }: LightfallProps) {
   const reduce = useReducedMotion();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const syncRef = useRef<(() => void) | null>(null);
+  const applyDprScaleRef = useRef<((scale: number) => void) | null>(null);
+  const dprScaleRef = useRef(dprScale);
+  const intersectingRef = useRef(false);
+  const activeRef = useRef(active);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    const baseDpr = dpr ?? Math.min(window.devicePixelRatio || 1, 1.5);
     const renderer = new Renderer({
-      dpr: dpr ?? Math.min(window.devicePixelRatio || 1, 1.5),
+      dpr: baseDpr * dprScaleRef.current,
       alpha: true,
       antialias: false,
     });
@@ -298,6 +324,18 @@ export function Lightfall({
     const ro = new ResizeObserver(resize);
     ro.observe(container);
 
+    // Reallocates the drawing buffer at the new resolution only when the
+    // scale actually changes (setSize is a no-op cost-wise otherwise) —
+    // never on every frame, since callers only pass a new dprScale on a
+    // discrete quality-tier change.
+    function applyDprScale(scale: number) {
+      const nextDpr = baseDpr * scale;
+      if (Math.abs(nextDpr - renderer.dpr) < 1e-6) return;
+      renderer.dpr = nextDpr;
+      resize();
+    }
+    applyDprScaleRef.current = applyDprScale;
+
     const mouseTarget: [number, number] = [0, 0];
     let lastTime = 0;
 
@@ -344,6 +382,13 @@ export function Lightfall({
       if (rafId != null) cancelAnimationFrame(rafId);
       rafId = null;
     }
+    // Only actually run while both geometrically visible AND the external
+    // `active` gate allows it — either alone can pause the RAF/shader work.
+    function sync() {
+      if (!reduce && intersectingRef.current && activeRef.current) start();
+      else stop();
+    }
+    syncRef.current = sync;
 
     let observer: IntersectionObserver | null = null;
 
@@ -351,16 +396,22 @@ export function Lightfall({
       renderer.render({ scene: mesh });
     } else if (pauseOffscreen && "IntersectionObserver" in window) {
       observer = new IntersectionObserver(
-        ([entry]) => (entry.isIntersecting ? start() : stop()),
+        ([entry]) => {
+          intersectingRef.current = entry.isIntersecting;
+          sync();
+        },
         { threshold: 0 },
       );
       observer.observe(container);
     } else {
-      start();
+      intersectingRef.current = true;
+      sync();
     }
 
     return () => {
       stop();
+      syncRef.current = null;
+      applyDprScaleRef.current = null;
       observer?.disconnect();
       ro.disconnect();
       if (mouseInteraction) window.removeEventListener("pointermove", onPointerMove);
@@ -371,6 +422,16 @@ export function Lightfall({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
+
+  useEffect(() => {
+    activeRef.current = active;
+    syncRef.current?.();
+  }, [active]);
+
+  useEffect(() => {
+    dprScaleRef.current = dprScale;
+    applyDprScaleRef.current?.(dprScale);
+  }, [dprScale]);
 
   return <div ref={containerRef} className={className} />;
 }

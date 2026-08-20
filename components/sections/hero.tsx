@@ -26,9 +26,21 @@ interface HeroProps {
    * standalone, outside that bridge.
    */
   revealed?: boolean;
+  /**
+   * True slightly before `revealed` (see isHeroPrepared in timeline.ts) —
+   * while AutomationNetwork's opaque backdrop still fully covers Hero. Hints
+   * the browser to promote the entrance-animated elements to their own
+   * compositor layers ahead of time via `will-change`, so that work (a
+   * measured real-GPU compositor stall — see the entrance's own comment
+   * below) lands while nobody can see it instead of on the first visible
+   * frame of the entrance. Never touches opacity/transform/filter/timing —
+   * purely a compositor hint, so it can't change how the entrance looks.
+   * Defaults to true so standalone rendering isn't held back from this hint.
+   */
+  prepared?: boolean;
 }
 
-export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
+export function Hero({ content, calendar, a11y, revealed = true, prepared = true }: HeroProps) {
   const reduce = useReducedMotion();
 
   const [activeScenario, setActiveScenario] = React.useState(content.scenarios[0]);
@@ -50,6 +62,13 @@ export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
     },
   };
 
+  // See the `prepared` prop doc above — a pure compositor hint, applied only
+  // for the short prepared-but-not-yet-revealed window (and through the
+  // entrance itself), never affecting the animated values or timing above.
+  const itemStyle: React.CSSProperties | undefined = prepared
+    ? { willChange: "opacity, transform, filter" }
+    : undefined;
+
   return (
     <section
       id="top"
@@ -68,7 +87,18 @@ export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
       className="relative mt-[-100dvh] overflow-hidden pt-28 pb-16 sm:pt-32 lg:pt-40"
     >
       <div aria-hidden className="lightfall-fade pointer-events-none absolute inset-0 -z-10">
-        <Lightfall className="h-full w-full" />
+        {/*
+          Hero's document position overlaps the AutomationNetwork sticky
+          panel for most of its scroll (see the -mt-[100dvh] comment above),
+          so a geometric IntersectionObserver alone (Lightfall's default gate)
+          reports "visible" — and starts spending a full shader every frame —
+          well before Hero is actually revealed. `active` is the same
+          pause/resume gate the AutomationNetwork scene already uses for its
+          own dim Lightfall (no remount/context loss on toggle), driven here
+          by the identical `revealed` signal so this canvas only ever runs
+          while Hero is genuinely dissolving in or fully shown.
+        */}
+        <Lightfall className="h-full w-full" active={revealed} />
       </div>
 
       <Container>
@@ -89,17 +119,18 @@ export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
           <div>
             <motion.p
               variants={item}
+              style={itemStyle}
               className="inline-flex items-center gap-2.5 rounded-full border border-border px-3.5 py-1.5 font-mono text-[10px] uppercase text-accent"
             >
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent animate-node" />
               {content.eyebrow}
             </motion.p>
 
-            <motion.div variants={item} className="mt-7">
+            <motion.div variants={item} style={itemStyle} className="mt-7">
               <HeroCopy scenario={activeScenario} scenarios={content.scenarios} />
             </motion.div>
 
-            <motion.div variants={item} className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <motion.div variants={item} style={itemStyle} className="mt-9 flex flex-col gap-3 sm:flex-row">
               <CallModal
                 label={content.primaryCta.label}
                 calendar={calendar}
@@ -115,6 +146,7 @@ export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
 
             <motion.dl
               variants={item}
+              style={itemStyle}
               className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-border pt-7"
             >
               {content.stats.map((s) => (
@@ -130,7 +162,7 @@ export function Hero({ content, calendar, a11y, revealed = true }: HeroProps) {
             </motion.dl>
           </div>
 
-          <motion.div variants={item}>
+          <motion.div variants={item} style={itemStyle}>
             <WorkflowCardSwap scenarios={content.scenarios} onActiveChange={handleActiveChange} />
           </motion.div>
         </motion.div>
