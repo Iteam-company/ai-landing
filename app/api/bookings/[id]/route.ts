@@ -20,13 +20,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: `status must be one of ${STATUSES.join(", ")}.` }, { status: 400 });
   }
   const col = await bookings();
-  const res = await col.updateOne({ id }, { $set: { status } });
+  const res = await col.updateOne({ id }, { $set: { status, blocksSlot: status !== "cancelled" } });
   if (!res.matchedCount) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
-  // Notify n8n when a booking is confirmed. It creates the Google Calendar
-  // event/Meet link and calls back POST .../confirmation-email with the
-  // meetUrl once ready — the branded confirmation email is sent from there,
-  // not here, since the Meet link doesn't exist yet at this point.
   if (status === "confirmed") {
     const doc = await col.findOne({ id }, { projection: { _id: 0 } });
     if (doc) {

@@ -2,32 +2,21 @@ import "server-only";
 import { MongoClient, type Db, type Collection } from "mongodb";
 import type { Locale } from "@/lib/lang";
 
-// Server-only MongoDB access for the backend features (Business Calendar,
-// Customers) and this template's lead intake. One free database per client — the
-// connection string and DB name come from the env the CLI writes into .env.local
-// (MONGODB_URI / EASYLAND_DB_NAME).
-//
-// The client is cached on globalThis so Next's dev hot-reload doesn't open a new
-// pool on every request.
-
 export interface BookingDoc {
-  id: string; // stable uuid the admin dashboard acts on
+  id: string;
   name: string;
   email: string;
   phone?: string;
   note?: string;
-  date: string; // ISO date, e.g. "2026-06-10"
-  time: string; // "14:30"
+  date: string;
+  time: string;
   status: "pending" | "confirmed" | "cancelled";
-  /** Language the visitor booked in — used for the confirmation email. */
   locale?: Locale;
   createdAt: string;
-  /** Google Meet link, set by the n8n confirmation callback once created. */
   meetUrl?: string;
-  /** Client reminder email successfully sent. */
   clientReminderSentAt?: string;
-  /** Internal Telegram reminder successfully sent. */
   teamReminderSentAt?: string;
+  blocksSlot?: boolean;
 }
 
 export interface CustomerDoc {

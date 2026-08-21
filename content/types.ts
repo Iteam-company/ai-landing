@@ -331,6 +331,7 @@ export interface Ui {
     note: string;
     sending: string;
     failed: string;
+    slotTaken: string;
   };
   portal: {
     account: string;

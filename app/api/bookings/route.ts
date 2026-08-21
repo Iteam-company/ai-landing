@@ -10,6 +10,10 @@ import { sendN8nEvent } from "@/lib/n8n";
 
 export const dynamic = "force-dynamic";
 
+function isDuplicateKeyError(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "code" in err && (err as { code?: unknown }).code === 11000;
+}
+
 // POST /api/bookings — public: create a booking request (status "pending").
 export async function POST(request: Request) {
   let body: Partial<BookingDoc>;
@@ -41,11 +45,19 @@ export async function POST(request: Request) {
     date,
     time,
     status: "pending",
+    blocksSlot: true,
     locale,
     createdAt: new Date().toISOString(),
   };
 
-  await (await bookings()).insertOne(doc);
+  try {
+    await (await bookings()).insertOne(doc);
+  } catch (err) {
+    if (isDuplicateKeyError(err)) {
+      return NextResponse.json({ error: "Slot already booked." }, { status: 409 });
+    }
+    throw err;
+  }
 
   // Fire the booking.created event at n8n. Best-effort — never throws, and a
   // failure here must not affect the booking (already saved) or the emails below.
@@ -60,12 +72,8 @@ export async function POST(request: Request) {
     comment: doc.note ?? "",
   });
 
-  // Theme-matched notifications (no-op when SMTP isn't configured). The visitor
-  // gets their own language; the agency gets the site's default one.
   const meta = siteMeta();
   await sendMail({ to: doc.email, ...bookingCustomerEmail({ ...meta, locale, booking: doc }) });
-  // ADMIN_USER is the primary recipient; NOTIFY_EMAILS (comma-separated) adds
-  // extra people (e.g. a second team member) to the same notification.
   const adminRecipients = [process.env.ADMIN_USER, ...(process.env.NOTIFY_EMAILS ?? "").split(",")]
     .map((addr) => addr?.trim())
     .filter((addr): addr is string => Boolean(addr));

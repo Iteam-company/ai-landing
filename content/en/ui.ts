@@ -22,6 +22,7 @@ export const ui: Ui = {
     note: "What should we cover on the call? (optional)",
     sending: "Sending…",
     failed: "Something went wrong.",
+    slotTaken: "This time was just booked. Please choose another slot.",
   },
   portal: {
     account: "account",
