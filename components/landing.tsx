@@ -24,23 +24,17 @@ export function Landing({ locale }: { locale: Locale }) {
         brand={site.brand}
         locale={locale}
         a11y={ui.a11y}
-        calendar={site.contact.calendar}
       />
       <main className="grain relative">
         <AutomationNetworkHero
           automationNetworkContent={site.automationNetwork}
           heroContent={site.hero}
-          calendar={site.contact.calendar}
-          a11y={ui.a11y}
         />
         <Pains content={site.pains} ui={ui.pains} />
         <Solutions content={site.solutions} a11y={ui.a11y} />
         <Showcase content={site.showcase} />
         <About content={site.about} />
-        <Faq
-          content={site.faq}
-          transitionHref={hasFeature("calendar") ? "#booking" : "#contact"}
-        />
+        <Faq content={site.faq} transitionHref="#booking" />
         {hasFeature("calendar") ? (
           <Booking content={site.booking} ui={ui.booking} locale={locale} />
         ) : null}

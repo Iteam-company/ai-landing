@@ -1,21 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, CalendarDays } from "lucide-react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { WorkflowCardSwap } from "@/components/workflow-card-swap";
 import { HeroCopy } from "@/components/hero-copy";
-import { CallModal } from "@/components/call-modal";
 import { Lightfall } from "@/components/effects/lightfall";
 import { cn } from "@/lib/utils";
-import type { HeroScenario, Site, Ui } from "@/content/types";
+import type { HeroScenario, Site } from "@/content/types";
 
 interface HeroProps {
   content: Site["hero"];
-  calendar: Site["contact"]["calendar"];
-  a11y: Ui["a11y"];
   /**
    * Gates the entrance animation + interactivity to the exact moment
    * AutomationNetwork's ENTER CORE fly-in dissolves into this section (see
@@ -40,7 +37,7 @@ interface HeroProps {
   prepared?: boolean;
 }
 
-export function Hero({ content, calendar, a11y, revealed = true, prepared = true }: HeroProps) {
+export function Hero({ content, revealed = true, prepared = true }: HeroProps) {
   const reduce = useReducedMotion();
 
   const [activeScenario, setActiveScenario] = React.useState(content.scenarios[0]);
@@ -131,11 +128,12 @@ export function Hero({ content, calendar, a11y, revealed = true, prepared = true
             </motion.div>
 
             <motion.div variants={item} style={itemStyle} className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <CallModal
-                label={content.primaryCta.label}
-                calendar={calendar}
-                closeLabel={a11y.close}
-              />
+              <Button asChild size="lg">
+                <a href={content.primaryCta.href}>
+                  <CalendarDays size={17} />
+                  {content.primaryCta.label}
+                </a>
+              </Button>
               <Button asChild size="lg" variant="secondary">
                 <a href={content.secondaryCta.href}>
                   {content.secondaryCta.label}

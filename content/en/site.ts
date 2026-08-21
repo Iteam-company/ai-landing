@@ -21,7 +21,7 @@ export const site: Site = {
       { label: "about us", href: "#about" },
       { label: "contact", href: "#booking" },
     ],
-    cta: { label: "Book a call", href: "#contact" },
+    cta: { label: "Book a call", href: "#booking" },
   },
   automationNetwork: {
     nodes: [
@@ -70,7 +70,7 @@ export const site: Site = {
   },
   hero: {
     eyebrow: "Lead response, automated",
-    primaryCta: { label: "Book a call", href: "#contact" },
+    primaryCta: { label: "Book a call", href: "#booking" },
     secondaryCta: { label: "Send us a message", href: "#booking" },
     stats: [
       { value: "24/7", label: "always answering leads" },
@@ -606,40 +606,10 @@ export const site: Site = {
           "Map of the bottlenecks",
           "Top-5 quick wins — what to ship right away",
         ],
-        cta: { label: "Book an audit", href: "#contact" },
+        cta: { label: "Book an audit", href: "#booking" },
       },
     ],
     note: "Contract-based · NDA on request · staged payments",
-  },
-  contact: {
-    eyebrow: "07 · get in touch",
-    title: "Ready to stop losing leads?",
-    subtitle: "Book a call, or send a quick message — we reply within a day.",
-    calendar: {
-      title: "Direct booking",
-      description:
-        "Pick a day and time — 30 minutes on Google Meet. The meeting link arrives right after booking.",
-      placeholder:
-        "The calendar is not connected yet. Set NEXT_PUBLIC_CAL_LINK (for example, “ai-team/30min”) and the Cal.com widget will appear here.",
-      caption: "cal.com · 30 min",
-    },
-    form: {
-      title: "Send us a message",
-      description: "Describe your task in a few lines — we'll come back with options and timelines.",
-      name: "Name",
-      contact: "Email or Telegram",
-      task: "Describe your task (optional)",
-      submit: "Send request",
-      sending: "Sending…",
-      success: "Request sent. We'll get back to you within one business day.",
-      consent: "By submitting the form you agree to the processing of your personal data.",
-      disabled:
-        "The form is not wired to a webhook yet. Write to us directly — contacts below.",
-    },
-    channels: [
-      { label: "email", value: "hello@neuroflow.agency", href: "mailto:hello@neuroflow.agency" },
-      { label: "telegram", value: "@neuroflow", href: "https://t.me/neuroflow" },
-    ],
   },
   booking: {
     eyebrow: "call · slot",

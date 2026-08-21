@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, CalendarDays } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "@/components/brand-mark";
-import { CallModal } from "@/components/call-modal";
+import { Button } from "@/components/ui/button";
 import { LangSwitcher } from "@/components/lang-switcher";
 import type { Site, Ui } from "@/content/types";
 import type { Locale } from "@/lib/lang";
@@ -15,10 +15,9 @@ interface HeaderProps {
   brand: Site["brand"];
   locale: Locale;
   a11y: Ui["a11y"];
-  calendar: Site["contact"]["calendar"];
 }
 
-export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
+export function Header({ nav, brand, locale, a11y }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [progress, setProgress] = React.useState(0);
   const [open, setOpen] = React.useState(false);
@@ -86,13 +85,12 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
 
         <div className="flex items-center gap-2">
           <LangSwitcher locale={locale} label={a11y.language} className="hidden sm:flex" />
-          <CallModal
-            label={nav.cta.label}
-            calendar={calendar}
-            closeLabel={a11y.close}
-            size="sm"
-            className="hidden sm:inline-flex"
-          />
+          <Button asChild size="sm" className="hidden sm:inline-flex">
+            <a href={nav.cta.href}>
+              <CalendarDays size={17} />
+              {nav.cta.label}
+            </a>
+          </Button>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -140,12 +138,12 @@ export function Header({ nav, brand, locale, a11y, calendar }: HeaderProps) {
               </ul>
               <div className="mt-2 space-y-3 border-t border-border px-1 pt-2">
                 <div onClick={() => setOpen(false)}>
-                  <CallModal
-                    label={nav.cta.label}
-                    calendar={calendar}
-                    closeLabel={a11y.close}
-                    className="w-full"
-                  />
+                  <Button asChild size="lg" className="w-full">
+                    <a href={nav.cta.href}>
+                      <CalendarDays size={17} />
+                      {nav.cta.label}
+                    </a>
+                  </Button>
                 </div>
                 <LangSwitcher
                   locale={locale}

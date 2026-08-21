@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { AutomationNetwork } from "@/components/sections/automation-network";
 import { Hero } from "@/components/sections/hero";
-import type { Site, Ui } from "@/content/types";
+import type { Site } from "@/content/types";
 
 interface AutomationNetworkHeroProps {
   automationNetworkContent: Site["automationNetwork"];
   heroContent: Site["hero"];
-  calendar: Site["contact"]["calendar"];
-  a11y: Ui["a11y"];
 }
 
 /**
@@ -23,8 +21,6 @@ interface AutomationNetworkHeroProps {
 export function AutomationNetworkHero({
   automationNetworkContent,
   heroContent,
-  calendar,
-  a11y,
 }: AutomationNetworkHeroProps) {
   const [heroRevealed, setHeroRevealed] = useState(false);
   const [heroPrepared, setHeroPrepared] = useState(false);
@@ -38,8 +34,6 @@ export function AutomationNetworkHero({
       />
       <Hero
         content={heroContent}
-        calendar={calendar}
-        a11y={a11y}
         revealed={heroRevealed}
         prepared={heroPrepared}
       />

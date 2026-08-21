@@ -11,8 +11,9 @@ import { INTL_LOCALE, type Locale } from "@/lib/lang";
 
 // Business Calendar — a self-hosted slot picker. Feature: "calendar".
 // Posts to the server route POST /api/bookings (present only in backend builds).
-// Fields: name, email, phone?, note, date, time. This is the EasyLand booking
-// feature, independent of the Cal.com embed in the conversion zone.
+// Fields: name, email, phone?, note, date, time. This is the site's only
+// booking flow (see the "Book a call" CTAs in header.tsx/hero.tsx, which
+// link here).
 
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 

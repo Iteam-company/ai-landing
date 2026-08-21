@@ -171,12 +171,6 @@ export interface FounderProfile {
   linkedin: CtaLink;
 }
 
-export interface ContactChannel {
-  label: string;
-  value: string;
-  href: string;
-}
-
 export interface Site {
   meta: {
     title: string;
@@ -260,30 +254,6 @@ export interface Site {
     tiers: PricingTier[];
     note: string;
   };
-  contact: {
-    eyebrow: string;
-    title: string;
-    subtitle: string;
-    calendar: {
-      title: string;
-      description: string;
-      placeholder: string;
-      caption: string;
-    };
-    form: {
-      title: string;
-      description: string;
-      name: string;
-      contact: string;
-      task: string;
-      submit: string;
-      sending: string;
-      success: string;
-      consent: string;
-      disabled: string;
-    };
-    channels: ContactChannel[];
-  };
   booking: {
     eyebrow: string;
     title: string;
@@ -308,7 +278,6 @@ export interface Ui {
   a11y: {
     menu: string;
     language: string;
-    close: string;
     agents: string;
   };
   pricing: {
@@ -317,10 +286,6 @@ export interface Ui {
   pains: {
     seeResult: string;
     hideResult: string;
-  };
-  form: {
-    failed: string;
-    notConnected: string;
   };
   booking: {
     date: string;
