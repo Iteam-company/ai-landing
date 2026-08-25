@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import "../globals.css";
 import { resolvePalette } from "@/lib/palettes";
 import { PalettePreview } from "@/components/palette-preview";
+import { MetaPixel } from "@/components/meta-pixel";
 import { getContent } from "@/content";
 import { fontVariables } from "@/app/fonts";
 import {
@@ -79,6 +80,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-bg text-fg">
+        <MetaPixel />
         <PalettePreview />
         {children}
       </body>
