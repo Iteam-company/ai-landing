@@ -25,6 +25,14 @@ function fetchBookedTimes(date: string): Promise<string[]> {
     .catch(() => []);
 }
 
+function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${y}-${m}-${day}`;
+}
+
 /** The next `count` week-days as { value: ISO date, label } options. */
 function upcomingDays(count: number, locale: Locale): { value: string; label: string }[] {
   const out: { value: string; label: string }[] = [];
@@ -35,7 +43,7 @@ function upcomingDays(count: number, locale: Locale): { value: string; label: st
     const day = d.getDay();
     if (day === 0 || day === 6) continue; // skip weekends
     out.push({
-      value: d.toISOString().slice(0, 10),
+      value: toDateKey(d),
       label: d.toLocaleDateString(INTL_LOCALE[locale], {
         weekday: "short",
         day: "numeric",
